@@ -63,10 +63,15 @@ export default function ForgotPassword() {
   };
 
   const handleReset = async () => {
-    if (!formData.otp || !formData.newPassword) {
-      Alert.alert("Error", "Please fill in all fields");
+    let newErrors = {};
+    if (!formData.otp) newErrors.otp = "OTP is required";
+    if (!formData.newPassword) newErrors.password = "New Password is required";
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
       return;
     }
+
     setLoading(true);
     try {
       const res = await fetch(`${apiUrl}/auth/reset-password`, {
@@ -79,7 +84,7 @@ export default function ForgotPassword() {
         Alert.alert("Success", "Password reset successfully! Please login.");
         router.replace("/login");
       } else {
-        Alert.alert("Failed", data.message);
+        setErrors({ general: data.message });
       }
     } catch (err) {
       Alert.alert("Error", "Server error. Try again.");
@@ -90,11 +95,7 @@ export default function ForgotPassword() {
 
   return (
     <SafeAreaView className="flex-1 bg-white">
-      <ScrollView
-        contentContainerStyle={{ flexGrow: 1 }}
-        className="px-6 pt-10"
-      >
-        {/* Back Button */}
+      <ScrollView contentContainerStyle={{ flexGrow: 1 }} className="px-6 pt-10">
         <TouchableOpacity
           onPress={() => router.back()}
           className="mb-6 w-10 h-10 items-center justify-center rounded-full bg-slate-50"
@@ -102,12 +103,11 @@ export default function ForgotPassword() {
           <ArrowLeft size={20} color="#64748b" />
         </TouchableOpacity>
 
-        {/* Icon Header */}
         <View className="items-center lg:items-start mb-8">
           <View className="size-16 bg-red-50 rounded-2xl items-center justify-center mb-6">
             <KeyRound size={32} color="#dc2626" />
           </View>
-          <AppText variant="heading" className="text-3xl">
+          <AppText variant="heading" className="text-3xl text-center lg:text-left">
             {step === 1 ? "Forgot Password?" : "Reset Password"}
           </AppText>
           <AppText className="text-slate-500 mt-2 text-center lg:text-left">
@@ -117,91 +117,81 @@ export default function ForgotPassword() {
           </AppText>
         </View>
 
-        {/* Form Container */}
         <View className="space-y-5">
           {step === 1 ? (
-            <MotiView
-              from={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-            >
-              <AppText variant="medium" className="mb-2">
-                Registered Email
-              </AppText>
-              <View
-                className={`flex-row items-center border rounded-xl px-4 py-4 ${errors.email ? "border-red-500 bg-red-50" : "border-slate-200 bg-slate-50"}`}
-              >
-                <Mail size={20} color="#64748b" />
+            <MotiView from={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
+              <AppText variant="medium" className="mb-2">Registered Email</AppText>
+              <View className={`flex-row items-center border rounded-xl px-4 py-4 ${errors.email ? "border-red-500 bg-red-50" : "border-slate-200 bg-slate-50"}`}>
+                <Mail size={20} color={errors.email ? "#ef4444" : "#64748b"} />
                 <TextInput
                   className="flex-1 ml-3 text-slate-900 font-inter"
+                  style={Platform.OS === 'web' ? { outlineStyle: 'none' } : {}}
+                  selectionColor="#ef4444"
                   placeholder="name@example.com"
                   value={formData.email}
-                  onChangeText={(text) =>
-                    setFormData({ ...formData, email: text })
-                  }
+                  onChangeText={(text) => {
+                    setFormData({ ...formData, email: text });
+                    if(errors.email) setErrors({});
+                  }}
                   autoCapitalize="none"
                   keyboardType="email-address"
                 />
               </View>
-              {errors.email && (
-                <AppText variant="error" className="mt-1">
-                  {errors.email}
-                </AppText>
-              )}
+              {errors.email && <AppText variant="error" className="mt-1">{errors.email}</AppText>}
             </MotiView>
           ) : (
-            <MotiView
-              from={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              className="space-y-5"
-            >
+            <MotiView from={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}>
               {/* OTP Input */}
-              <View>
-                <AppText variant="medium" className="mb-2">
-                  6-Digit OTP
-                </AppText>
-                <View className="flex-row items-center border border-slate-200 bg-slate-50 rounded-xl px-4 py-4">
-                  <ShieldCheck size={20} color="#64748b" />
+              <View className="mb-5">
+                <AppText variant="medium" className="mb-2">6-Digit OTP</AppText>
+                <View className={`flex-row items-center border rounded-xl px-4 py-4 ${errors.otp ? "border-red-500 bg-red-50" : "border-slate-200 bg-slate-50"}`}>
+                  <ShieldCheck size={20} color={errors.otp ? "#ef4444" : "#64748b"} />
                   <TextInput
                     className="flex-1 ml-3 text-slate-900 font-inter"
+                    style={Platform.OS === 'web' ? { outlineStyle: 'none' } : {}}
+                    selectionColor="#ef4444"
                     placeholder="Enter Code"
                     keyboardType="number-pad"
                     maxLength={6}
-                    onChangeText={(text) =>
-                      setFormData({ ...formData, otp: text })
-                    }
+                    onChangeText={(text) => {
+                      setFormData({ ...formData, otp: text });
+                      if(errors.otp) setErrors({...errors, otp: null});
+                    }}
                   />
                 </View>
+                {errors.otp && <AppText variant="error" className="mt-1">{errors.otp}</AppText>}
               </View>
 
               {/* New Password Input */}
               <View>
-                <AppText variant="medium" className="mb-2">
-                  New Password
-                </AppText>
-                <View className="flex-row items-center border border-slate-200 bg-slate-50 rounded-xl px-4 py-4">
-                  <Lock size={20} color="#64748b" />
+                <AppText variant="medium" className="mb-2">New Password</AppText>
+                <View className={`flex-row items-center border rounded-xl px-4 py-4 ${errors.password ? "border-red-500 bg-red-50" : "border-slate-200 bg-slate-50"}`}>
+                  <Lock size={20} color={errors.password ? "#ef4444" : "#64748b"} />
                   <TextInput
                     className="flex-1 ml-3 text-slate-900 font-inter"
+                    style={Platform.OS === 'web' ? { outlineStyle: 'none' } : {}}
+                    selectionColor="#ef4444"
                     placeholder="Min. 6 characters"
                     secureTextEntry
-                    onChangeText={(text) =>
-                      setFormData({ ...formData, newPassword: text })
-                    }
+                    onChangeText={(text) => {
+                      setFormData({ ...formData, newPassword: text });
+                      if(errors.password) setErrors({...errors, password: null});
+                    }}
                   />
                 </View>
+                {errors.password && <AppText variant="error" className="mt-1">{errors.password}</AppText>}
               </View>
             </MotiView>
           )}
 
-          {/* Action Button */}
+          {errors.general && <AppText variant="error" className="text-center">{errors.general}</AppText>}
+
           <TouchableOpacity
             onPress={step === 1 ? handleSendOtp : handleReset}
             disabled={loading}
             className="w-full bg-red-600 h-16 rounded-2xl items-center justify-center mt-6 shadow-xl shadow-red-200"
           >
-            {loading ? (
-              <ActivityIndicator color="white" />
-            ) : (
+            {loading ? <ActivityIndicator color="white" /> : (
               <AppText className="text-white font-black uppercase tracking-widest">
                 {step === 1 ? "Get Reset Code" : "Update Password"}
               </AppText>
@@ -209,15 +199,6 @@ export default function ForgotPassword() {
           </TouchableOpacity>
         </View>
 
-        {/* Footer Link */}
-        <TouchableOpacity
-          onPress={() => router.replace("/login")}
-          className="mt-auto mb-10 flex-row justify-center items-center"
-        >
-          <AppText className="text-slate-400 font-bold uppercase tracking-widest text-xs">
-            Back to Login
-          </AppText>
-        </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
   );

@@ -1,90 +1,99 @@
 import React, { useEffect } from "react";
-import { View, ActivityIndicator, Dimensions, Text } from "react-native";
+import { View, Text, Dimensions } from "react-native";
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import { MotiView, MotiText } from "moti"; // <--- The animation magic
-import AppText from "../components/AppText";
-import { LinearGradient } from "expo-linear-gradient"; // Optional, but makes it look professional
+import { MotiView } from "moti";
+import { LinearGradient } from "expo-linear-gradient";
+import Svg, { Path, Defs, LinearGradient as SvgLinearGradient, Stop } from "react-native-svg";
+import Exact3DRubyDrop from "../components/Exact3DRubyDrop";
 
 const { width } = Dimensions.get("window");
 
-// A professional Blood Drop SVG or View representation
-const BloodDropIcon = () => (
-  <View className="relative w-24 h-24">
-    {/* A stylized, geometric blood drop */}
-    <LinearGradient
-      colors={["#ff4d4d", "#ff1a1a"]} // Subtle gradient for professional depth
-      start={[0, 0]}
-      end={[0.5, 1]}
-      className="absolute bottom-0 w-24 h-24 rounded-full rounded-t-none rounded-br-none rotate-[20deg]"
-      style={{
-        transform: [{ scaleY: 1.1 }], // Stretch the drop slightly
-        borderTopRightRadius: width * 0.1, // Pointy top
-        borderBottomLeftRadius: width * 0.1, // Pointy top
-      }}
-    />
-    {/* Minimalist glare effect to add dimension */}
-    <View className="absolute top-4 right-5 w-5 h-5 bg-white opacity-20 rounded-full" />
-  </View>
-);
 
 export default function SplashScreen() {
   const router = useRouter();
+  const progressBarWidth = width * 0.45;
 
   useEffect(() => {
-    // Wait for the animation + brief extra pause (3.5 seconds total)
     const timer = setTimeout(() => {
       router.replace("/home");
-    }, 3500);
+    }, 5000);
 
     return () => clearTimeout(timer);
   }, []);
 
   return (
-    <View className="flex-1 bg-white items-center justify-center px-10">
+    <View className="flex-1 bg-white items-center justify-center px-8">
       <StatusBar style="dark" />
+<MotiView
+    from={{ opacity: 0, scale: 0.5, translateY: 20 }}
+    animate={{ opacity: 1, scale: 1, translateY: 0 }}
+    transition={{ type: 'spring', damping: 12 }}
+    className="items-center justify-center"
+  >
+    {/* Splash ke liye Width aur Height yahan control hogi */}
+    <View style={{ width: 90, height: 120 }}>
+       <Exact3DRubyDrop />
+    </View>
+  </MotiView>
 
-      {/* 1. Animate the Blood Icon (Fade in from below) */}
+      {/* App Name */}
       <MotiView
-        from={{ opacity: 0, translateY: 30 }}
+        from={{ opacity: 0, translateY: 10 }}
         animate={{ opacity: 1, translateY: 0 }}
-        transition={{ type: "timing", duration: 1000, delay: 200 }} // Smooth timing, slightly delayed
+        transition={{ type: "timing", duration: 800, delay: 800 }}
       >
-        <BloodDropIcon />
-      </MotiView>
-
-      {/* 2. Animate the App Name (Sequential fade-in after icon) */}
-      <MotiView
-        from={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ type: "timing", duration: 800, delay: 1200 }} // Wait for icon, then fade
-        className="mt-10 items-center"
-      >
-        <Text className="text-slate-900 text-2xl font-extrabold">
+        <Text className="text-[26px] font-bold text-[#333333] mb-5">
           Blood Donation
         </Text>
       </MotiView>
 
-      {/* 3. Animate the Slogan (Sequential fade-in after name) */}
-      <MotiView
-        from={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ type: "timing", duration: 800, delay: 1800 }} // Wait for name, then fade
-        className="mt-2 items-center"
+      {/* Progress Bar FIXED */}
+      <View
+        style={{ width: progressBarWidth }}
+        className="h-[6px] bg-gray-100 rounded-full overflow-hidden"
       >
-        <AppText variant="caption" className="text-red-600 font-bold">
-          Save Lives • Give Blood
-        </AppText>
-      </MotiView>
+        <MotiView
+          from={{ scaleX: 0 }}
+          animate={{ scaleX: 1 }}
+          transition={{
+            type: "timing",
+            duration: 3500,
+            delay: 1200,
+          }}
+          style={{
+            flex: 1,
+            transform: [{ scaleX: 1 }],
+          }}
+          className="origin-left h-full"
+        >
+          <LinearGradient
+            colors={["#D31027", "#930B1C"]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={{ flex: 1 }}
+          />
+        </MotiView>
+      </View>
 
-      {/* 4. Small, modern loader that appears at the very end */}
+      {/* Bottom Text FIXED */}
       <MotiView
-        from={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ type: "timing", duration: 500, delay: 2800 }}
-        className="absolute bottom-20"
+        from={{ opacity: 0, translateY: 20 }}
+        animate={{ opacity: 1, translateY: 0 }}
+        transition={{ type: "timing", duration: 1000, delay: 3000 }}
+        style={{
+          position: "absolute",
+          bottom: 80,
+          width: "100%",
+          alignItems: "center",
+        }}
       >
-        <ActivityIndicator size="small" color="#e11d48" />
+        <Text className="text-[15px] text-gray-500 font-medium text-center px-4">
+          Connecting Heroes, Saving Lives.
+        </Text>
+        <Text className="text-[12px] text-gray-400 mt-1">
+          Since 2026.
+        </Text>
       </MotiView>
     </View>
   );
