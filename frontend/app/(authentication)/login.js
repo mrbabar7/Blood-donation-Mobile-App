@@ -67,7 +67,10 @@ export default function LogIn() {
       } else {
         if (data.notVerified) {
           Alert.alert("Verify Email", "Please verify your email first.");
-          router.push({ pathname: "/verifyotp", params: { email: formData.email } });
+          router.push({
+            pathname: "/verifyotp",
+            params: { email: formData.email },
+          });
         } else {
           setErrors({ general: data.message });
         }
@@ -81,81 +84,121 @@ export default function LogIn() {
 
   return (
     <SafeAreaView className="flex-1 bg-white/90">
-      <ScrollView contentContainerStyle={{ flexGrow: 1 }} className="px-6 pt-10">
+      <ScrollView
+        contentContainerStyle={{ flexGrow: 1 }}
+        className="px-6 pt-10"
+      >
         <View className="mb-10 items-center justify-center">
-          <AppText variant="heading" className="text-4xl">Welcome Back</AppText>
-          <AppText className="text-slate-500 mt-2">Please enter your details to login.</AppText>
+          <AppText variant="heading" className="text-4xl">
+            Welcome Back
+          </AppText>
+          <AppText className="text-slate-500 mt-2">
+            Please enter your details to login.
+          </AppText>
         </View>
 
         <View className="space-y-4">
-          {/* Email Input */}
           <View>
-            <AppText variant="medium" className="mb-2">Email Address</AppText>
-            <View className={`flex-row items-center border rounded-xl px-4 py-3 ${errors.email ? "border-red-500 bg-red-50" : "border-slate-200 bg-slate-50"}`}>
+            <AppText variant="medium" className="mb-2">
+              Email Address
+            </AppText>
+            <View
+              className={`flex-row items-center border rounded-xl px-4 py-3 ${errors.email ? "border-red-500 bg-red-50" : "border-slate-200 bg-slate-50"}`}
+            >
               <Mail size={20} color={errors.email ? "#ef4444" : "#64748b"} />
               <TextInput
                 className="flex-1 ml-3 text-slate-900 font-inter"
-                style={{ outlineStyle: 'none' }} // Yeh line web par black dabba khatam karegi
-                selectionColor="#ef4444"         // Click par cursor red hoga
+                style={{ outlineStyle: "none" }}
+                selectionColor="#ef4444"
                 placeholder="name@email.com"
                 value={formData.email}
                 onChangeText={(text) => {
                   setFormData({ ...formData, email: text });
-                  if(errors.email) setErrors({...errors, email: null});
+                  if (errors.email) setErrors({ ...errors, email: null });
                 }}
                 autoCapitalize="none"
                 keyboardType="email-address"
               />
             </View>
-            {errors.email && <AppText className="text-red-500 text-xs mt-1 ml-1">{errors.email}</AppText>}
+            {errors.email && (
+              <AppText className="text-red-500 text-xs mt-1 ml-1">
+                {errors.email}
+              </AppText>
+            )}
           </View>
 
-          {/* Password Input Section */}
           <View className="mt-4">
-            <AppText variant="medium" className="mb-2">Password</AppText>
-            <View className={`flex-row items-center border rounded-xl px-4 py-3 ${errors.password ? "border-red-500 bg-red-50" : "border-slate-200 bg-slate-50"}`}>
+            <AppText variant="medium" className="mb-2">
+              Password
+            </AppText>
+            <View
+              className={`flex-row items-center border rounded-xl px-4 py-3 ${errors.password ? "border-red-500 bg-red-50" : "border-slate-200 bg-slate-50"}`}
+            >
               <Lock size={20} color={errors.password ? "#ef4444" : "#64748b"} />
               <TextInput
                 className="flex-1 ml-3 text-slate-900 font-inter"
-                style={{ outlineStyle: 'none' }} // Yeh line web par black dabba khatam karegi
-                selectionColor="#ef4444"         // Click par cursor red hoga
+                style={{ outlineStyle: "none" }}
+                selectionColor="#ef4444"
                 placeholder="••••••••"
                 secureTextEntry={!showPassword}
                 value={formData.password}
                 onChangeText={(text) => {
                   setFormData({ ...formData, password: text });
-                  if(errors.password) setErrors({...errors, password: null});
+                  if (errors.password) setErrors({ ...errors, password: null });
                 }}
               />
               <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
-                {showPassword ? <EyeOff size={20} color="#64748b" /> : <Eye size={20} color="#64748b" />}
+                {showPassword ? (
+                  <EyeOff size={20} color="#64748b" />
+                ) : (
+                  <Eye size={20} color="#64748b" />
+                )}
               </TouchableOpacity>
             </View>
-            {errors.password && <AppText className="text-red-500 text-xs mt-1 ml-1">{errors.password}</AppText>}
+            {errors.password && (
+              <AppText className="text-red-500 text-xs mt-1 ml-1">
+                {errors.password}
+              </AppText>
+            )}
 
-            <TouchableOpacity 
+            <TouchableOpacity
               onPress={() => router.push("/forgotpassword")}
-              style={{ alignSelf: 'flex-end' }} 
+              style={{ alignSelf: "flex-end" }}
               className="mt-2"
             >
-              <AppText style={{ color: '#dc2626' }} className="text-red-600 font-bold text-right">Forgot Password?</AppText>
+              <AppText
+                style={{ color: "#dc2626" }}
+                className="text-red-600 font-bold text-right"
+              >
+                Forgot Password?
+              </AppText>
             </TouchableOpacity>
           </View>
 
-          {errors.general && <AppText variant="error" className="mt-2 text-center">{errors.general}</AppText>}
+          {errors.general && (
+            <AppText variant="error" className="mt-2 text-center">
+              {errors.general}
+            </AppText>
+          )}
 
           <TouchableOpacity
             onPress={handleLogin}
             disabled={loading}
             className="w-full bg-red-600 h-14 rounded-2xl items-center justify-center mt-8 shadow-lg shadow-red-200"
           >
-            {loading ? <ActivityIndicator color="white" /> : <AppText className="text-white font-bold text-lg">Login</AppText>}
+            {loading ? (
+              <ActivityIndicator color="white" />
+            ) : (
+              <AppText className="text-white font-bold text-lg">Login</AppText>
+            )}
           </TouchableOpacity>
         </View>
 
         <View className="flex-row items-center my-8">
           <View className="flex-1 h-[1px] bg-slate-200" />
-          <AppText className="px-4 text-slate-400 text-sm  uppercase tracking-widest">Or register with</AppText>
+          <AppText className="px-4 text-slate-400 text-sm  uppercase tracking-widest">
+            Or register with
+          </AppText>
           <View className="flex-1 h-[1px] bg-slate-200" />
         </View>
 
@@ -164,13 +207,17 @@ export default function LogIn() {
           onPress={() => Alert.alert("Google Login", "Integration needed.")}
         >
           <UserRoundCheck size={22} color="#DB4437" />
-          <AppText variant="medium" className="ml-3">Google</AppText>
+          <AppText variant="medium" className="ml-3">
+            Google
+          </AppText>
         </TouchableOpacity>
 
         <View className="flex-row justify-center mt-auto pb-10">
           <AppText>Don't have an account? </AppText>
           <TouchableOpacity onPress={() => router.push("/signup")}>
-            <AppText className="text-red-600 font-bold underline">Create Account</AppText>
+            <AppText className="text-red-600 font-bold underline">
+              Create Account
+            </AppText>
           </TouchableOpacity>
         </View>
       </ScrollView>

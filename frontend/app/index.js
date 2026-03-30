@@ -4,11 +4,15 @@ import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { MotiView } from "moti";
 import { LinearGradient } from "expo-linear-gradient";
-import Svg, { Path, Defs, LinearGradient as SvgLinearGradient, Stop } from "react-native-svg";
+import Svg, {
+  Path,
+  Defs,
+  LinearGradient as SvgLinearGradient,
+  Stop,
+} from "react-native-svg";
 import Exact3DRubyDrop from "../components/Exact3DRubyDrop";
 
 const { width } = Dimensions.get("window");
-
 
 export default function SplashScreen() {
   const router = useRouter();
@@ -25,19 +29,17 @@ export default function SplashScreen() {
   return (
     <View className="flex-1 bg-white items-center justify-center px-8">
       <StatusBar style="dark" />
-<MotiView
-    from={{ opacity: 0, scale: 0.5, translateY: 20 }}
-    animate={{ opacity: 1, scale: 1, translateY: 0 }}
-    transition={{ type: 'spring', damping: 12 }}
-    className="items-center justify-center"
-  >
-    {/* Splash ke liye Width aur Height yahan control hogi */}
-    <View style={{ width: 90, height: 120 }}>
-       <Exact3DRubyDrop />
-    </View>
-  </MotiView>
+      <MotiView
+        from={{ opacity: 0, scale: 0.5, translateY: 20 }}
+        animate={{ opacity: 1, scale: 1, translateY: 0 }}
+        transition={{ type: "spring", damping: 12 }}
+        className="items-center justify-center"
+      >
+        <View style={{ width: 90, height: 120 }}>
+          <Exact3DRubyDrop />
+        </View>
+      </MotiView>
 
-      {/* App Name */}
       <MotiView
         from={{ opacity: 0, translateY: 10 }}
         animate={{ opacity: 1, translateY: 0 }}
@@ -48,7 +50,6 @@ export default function SplashScreen() {
         </Text>
       </MotiView>
 
-      {/* Progress Bar FIXED */}
       <View
         style={{ width: progressBarWidth }}
         className="h-[6px] bg-gray-100 rounded-full overflow-hidden"
@@ -76,7 +77,6 @@ export default function SplashScreen() {
         </MotiView>
       </View>
 
-      {/* Bottom Text FIXED */}
       <MotiView
         from={{ opacity: 0, translateY: 20 }}
         animate={{ opacity: 1, translateY: 0 }}
@@ -91,9 +91,7 @@ export default function SplashScreen() {
         <Text className="text-[15px] text-gray-500 font-medium text-center px-4">
           Connecting Heroes, Saving Lives.
         </Text>
-        <Text className="text-[12px] text-gray-400 mt-1">
-          Since 2026.
-        </Text>
+        <Text className="text-[12px] text-gray-400 mt-1">Since 2026.</Text>
       </MotiView>
     </View>
   );

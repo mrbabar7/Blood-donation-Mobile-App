@@ -1,20 +1,54 @@
 import React from "react";
-// Yahan View ko add kar diya hai
-import { View } from "react-native"; 
-import Svg, { Path, Defs, RadialGradient, LinearGradient as SvgLinearGradient, Stop } from 'react-native-svg';
+import { View } from "react-native";
+import Svg, {
+  Path,
+  Defs,
+  RadialGradient,
+  LinearGradient as SvgLinearGradient,
+  Stop,
+} from "react-native-svg";
 
 const Exact3DRubyDrop = () => (
-  <View style={{ width: '100%', height: '100%', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
-    
-    <Svg width="100%" height="100%" viewBox="0 0 110 150" fill="none" preserveAspectRatio="xMidYMid meet">
+  <View
+    style={{
+      width: "100%",
+      height: "100%",
+      alignItems: "center",
+      justifyContent: "center",
+      position: "relative",
+    }}
+  >
+    <Svg
+      width="100%"
+      height="100%"
+      viewBox="0 0 110 150"
+      fill="none"
+      preserveAspectRatio="xMidYMid meet"
+    >
       <Defs>
-        <RadialGradient id="ruby_main" cx="55" cy="95" rx="55" ry="55" fx="55" fy="70" gradientUnits="userSpaceOnUse">
+        <RadialGradient
+          id="ruby_main"
+          cx="55"
+          cy="95"
+          rx="55"
+          ry="55"
+          fx="55"
+          fy="70"
+          gradientUnits="userSpaceOnUse"
+        >
           <Stop offset="0" stopColor="#FF1E1E" />
           <Stop offset="0.7" stopColor="#B30F1A" />
           <Stop offset="1" stopColor="#660000" />
         </RadialGradient>
 
-        <SvgLinearGradient id="glass_shine" x1="55" y1="0" x2="55" y2="80" gradientUnits="userSpaceOnUse">
+        <SvgLinearGradient
+          id="glass_shine"
+          x1="55"
+          y1="0"
+          x2="55"
+          y2="80"
+          gradientUnits="userSpaceOnUse"
+        >
           <Stop offset="0" stopColor="white" stopOpacity="0.4" />
           <Stop offset="1" stopColor="white" stopOpacity="0" />
         </SvgLinearGradient>
@@ -32,18 +66,17 @@ const Exact3DRubyDrop = () => (
       />
     </Svg>
 
-    {/* Reflection/Shine Layer */}
-    <View 
-      style={{ 
-        position: 'absolute', 
-        top: '25%', 
-        left: '45%', 
-        width: '18%', 
-        height: '22%', 
-        backgroundColor: 'rgba(255,255,255,0.3)', 
-        borderRadius: 10, 
-        transform: [{ rotate: "15deg" }] 
-      }} 
+    <View
+      style={{
+        position: "absolute",
+        top: "25%",
+        left: "45%",
+        width: "18%",
+        height: "22%",
+        backgroundColor: "rgba(255,255,255,0.3)",
+        borderRadius: 10,
+        transform: [{ rotate: "15deg" }],
+      }}
     />
   </View>
 );

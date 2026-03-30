@@ -12,6 +12,7 @@ export default function Layout() {
         <Stack.Screen name="signup" />
         <Stack.Screen name="forgotpassword" />
         <Stack.Screen name="verifyotp" />
+        <Stack.Screen name="(Landing-Page)/About" />
       </Stack>
     </SafeAreaProvider>
   );
