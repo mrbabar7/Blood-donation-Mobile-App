@@ -19,7 +19,7 @@ const apiUrl =
 
 export default function OTPVerify() {
   const router = useRouter();
-  const { email } = useLocalSearchParams(); // Gets email from router params
+  const { email } = useLocalSearchParams();
 
   const [otp, setOtp] = useState(new Array(6).fill(""));
   const [loading, setLoading] = useState(false);
@@ -45,7 +45,6 @@ export default function OTPVerify() {
   };
 
   const handleKeyPress = (e, index) => {
-    // Move to previous input on backspace if current is empty
     if (e.nativeEvent.key === "Backspace" && !otp[index] && index > 0) {
       inputs.current[index - 1].focus();
     }
@@ -128,7 +127,6 @@ export default function OTPVerify() {
           </AppText>
         </View>
 
-        {/* OTP Input Row */}
         <View className="flex-row justify-between w-full mb-6">
           {otp.map((digit, index) => (
             <TextInput
