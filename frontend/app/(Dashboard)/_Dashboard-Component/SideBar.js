@@ -19,7 +19,7 @@ export default function SideBar(props) {
       contentContainerStyle={{ flex: 1 }}
       className="bg-red-800"
     >
-      <View className="p-5 border-b border-white/10 flex-row items-center">
+      {/* <View className="p-5 border-b border-white/10 flex-row items-center">
         <Image
           source={{
             uri: "https://res.cloudinary.com/dzghpapmn/image/upload/v1772727345/bg-remove-logo_skwuuz.png",
@@ -31,7 +31,7 @@ export default function SideBar(props) {
           <Text className="text-white text-xl font-bold italic">PakBlood</Text>
           <Text className="text-white/60 text-[10px]">Save a Life</Text>
         </View>
-      </View>
+      </View> */}
 
       <View className="flex-1 mt-4 px-2">
         <DrawerItemList {...props} />
