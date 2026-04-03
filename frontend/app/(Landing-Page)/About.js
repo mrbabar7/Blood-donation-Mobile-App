@@ -6,7 +6,6 @@ import {
   TouchableOpacity,
   Dimensions,
   SafeAreaView,
-  StatusBar,
 } from "react-native";
 import {
   Target,
@@ -87,7 +86,6 @@ const About = ({ navigation }) => {
 
   return (
     <SafeAreaView className="flex-1 bg-slate-50">
-      <StatusBar barStyle="light-content" />
       <ScrollView showsVerticalScrollIndicator={false}>
         <View className="bg-[#B33030] pt-16 pb-20 px-6 shadow-2xl relative overflow-hidden">
           <Animated.View entering={FadeInDown.duration(800)} className="z-10">

@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import {
   View,
   Text,
@@ -6,7 +6,6 @@ import {
   TouchableOpacity,
   TextInput,
   SafeAreaView,
-  StatusBar,
   Dimensions,
   Platform,
   ActivityIndicator,
@@ -19,13 +18,14 @@ import {
   Siren,
   ChevronDown,
 } from "lucide-react-native";
-import { WebView } from "react-native-webview";
 import Animated, { FadeInDown, FadeOutUp } from "react-native-reanimated";
 
 const { width } = Dimensions.get("window");
 
 const ContactUs = () => {
   const scrollRef = useRef(null);
+  const isMounted = useRef(true); // Track if component is mounted
+
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -36,6 +36,14 @@ const ContactUs = () => {
   const [loading, setLoading] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
+
+  // --- CRITICAL: Cleanup to prevent "State update on unmounted component" ---
+  useEffect(() => {
+    isMounted.current = true;
+    return () => {
+      isMounted.current = false;
+    };
+  }, []);
 
   const subjects = [
     "General Inquiry",
@@ -67,11 +75,11 @@ const ContactUs = () => {
 
   const validate = () => {
     let newErrors = {};
-    if (!formData.name) newErrors.name = "Name is required";
-    if (!formData.email) newErrors.email = "Email is required";
+    if (!formData.name.trim()) newErrors.name = "Name is required";
+    if (!formData.email.trim()) newErrors.email = "Email is required";
     else if (!/\S+@\S+\.\S+/.test(formData.email))
       newErrors.email = "Invalid email address";
-    if (!formData.message) newErrors.message = "Message cannot be empty";
+    if (!formData.message.trim()) newErrors.message = "Message cannot be empty";
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -81,139 +89,113 @@ const ContactUs = () => {
     if (validate()) {
       setLoading(true);
       setIsSubmitted(false);
+
+      // Simulate API Call
       setTimeout(() => {
-        setLoading(false);
-        setIsSubmitted(true);
-        setFormData({
-          name: "",
-          email: "",
-          subject: "General Inquiry",
-          message: "",
-        });
+        // Only update state if the user is still on this screen
+        if (isMounted.current) {
+          setLoading(false);
+          setIsSubmitted(true);
+          setFormData({
+            name: "",
+            email: "",
+            subject: "General Inquiry",
+            message: "",
+          });
 
-        scrollRef.current?.scrollTo({ y: 0, animated: true });
+          scrollRef.current?.scrollTo({ y: 0, animated: true });
 
-        setTimeout(() => setIsSubmitted(false), 4000);
+          // Auto-hide success message
+          setTimeout(() => {
+            if (isMounted.current) setIsSubmitted(false);
+          }, 4000);
+        }
       }, 1500);
     }
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-gray-200">
-      <StatusBar barStyle="light-content" />
-      <ScrollView ref={scrollRef} showsVerticalScrollIndicator={false}>
+    <SafeAreaView className="flex-1 bg-gray-100">
+      <ScrollView
+        ref={scrollRef}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: 40 }}
+      >
+        {/* --- DYNAMIC HEADER --- */}
         <View className="bg-[#B33030] pt-16 pb-20 px-6 shadow-2xl relative overflow-hidden">
           {isSubmitted && (
             <Animated.View
               entering={FadeInDown}
               exiting={FadeOutUp}
-              style={{
-                position: "absolute",
-                top: Platform.OS === "ios" ? 60 : 30,
-                left: 20,
-                right: 20,
-                zIndex: 999,
-                elevation: 15,
-                backgroundColor: "#22C55E",
-                padding: 16,
-                borderRadius: 24,
-                borderWidth: 2,
-                borderColor: "#DCFCE7",
-                flexDirection: "row",
-                alignItems: "center",
-                justifyContent: "center",
-                shadowColor: "#000",
-                shadowOffset: { width: 0, height: 10 },
-                shadowOpacity: 0.3,
-                shadowRadius: 20,
-              }}
+              className="absolute top-10 left-5 right-5 z-50 bg-green-500 p-4 rounded-3xl flex-row items-center justify-center border-2 border-green-100 shadow-lg"
             >
-              <View className="bg-white p-1 rounded-full mr-3 ">
+              <View className="bg-white p-1 rounded-full mr-3">
                 <Text className="text-green-600 font-bold text-[10px]">✓</Text>
               </View>
-              <Text className="text-white font-extrabold text-center text-[15px] tracking-wide">
-                Message sent to admin successfully!
+              <Text className="text-white font-bold text-[14px]">
+                Message sent successfully!
               </Text>
             </Animated.View>
           )}
 
-          <Animated.View entering={FadeInDown.duration(800)} className="z-10">
-            <Text className="text-white/70 font-medium tracking-[2px] uppercase text-xs mb-2">
+          <Animated.View entering={FadeInDown.duration(800)}>
+            <Text className="text-white/70 font-bold tracking-[2px] uppercase text-[10px] mb-2">
               Have Questions?
             </Text>
             <Text className="text-white font-bold text-4xl leading-tight">
               Get in Touch{"\n"}We're Here to Help
             </Text>
-            <View className="h-1 w-12 bg-white/30 mt-5 rounded-full" />
+            <View className="h-1.5 w-12 bg-white/40 mt-5 rounded-full" />
           </Animated.View>
+
           <View className="absolute -top-10 -right-10 w-40 h-40 bg-white/10 rounded-full" />
-          <View className="absolute top-20 -right-20 w-60 h-60 bg-black/5 rounded-full" />
           <View className="absolute -bottom-6 -left-6 opacity-10">
-            <Siren size={180} color="white" strokeWidth={1.5} />
+            <Siren size={180} color="white" />
           </View>
         </View>
 
-        <View className="px-6 mt-12">
-          <View className="mb-10 px-2">
-            <Text className="text-2xl font-bold text-gray-800 mb-8 text-center">
+        <View className="px-6 -mt-10">
+          {/* --- CONTACT INFO --- */}
+          <View className="bg-white rounded-[2.5rem] p-8 shadow-xl shadow-slate-200 mb-8 border border-white">
+            <Text className="text-xl font-bold text-gray-800 mb-6">
               Contact Information
             </Text>
-            <div className="space-y-8">
+            <View className="space-y-6">
               {contactData.map((item) => (
-                <View key={item.id} className="flex-row items-start gap-5 mt-6">
+                <View key={item.id} className="flex-row items-center mb-6">
                   <View className="bg-red-50 p-4 rounded-2xl">{item.icon}</View>
-                  <View>
-                    <Text className="text-xs text-gray-500 font-bold uppercase tracking-widest">
+                  <View className="ml-5">
+                    <Text className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">
                       {item.label}
                     </Text>
-                    <Text className="text-lg font-bold text-gray-800">
+                    <Text className="text-base font-bold text-gray-800">
                       {item.value}
                     </Text>
                   </View>
                 </View>
               ))}
-            </div>
+            </View>
           </View>
 
-          <View
-            className="mb-12 overflow-hidden rounded-[2.5rem] shadow-xl border border-white bg-white"
-            style={{ height: 260 }}
-          >
-            {Platform.OS === "web" ? (
-              <iframe
-                width="100%"
-                height="100%"
-                frameBorder="0"
-                src="https://maps.google.com/maps?q=Renala%20Khurd&t=&z=13&ie=UTF8&iwloc=&output=embed"
-                style={{ filter: "grayscale(10%)", border: 0 }}
-              ></iframe>
-            ) : (
-              <View className="flex-1 items-center justify-center bg-gray-100">
-                <MapPin size={40} color="#E25555" />
-                <Text className="text-gray-400 mt-2">Map View</Text>
-              </View>
-            )}
-          </View>
-
+          {/* --- FORM SECTION --- */}
           <Animated.View
             entering={FadeInDown.delay(300)}
-            className="bg-red-100 rounded-[3rem] p-8 shadow-2xl shadow-slate-400 border border-gray-50 mb-12"
-            style={{ elevation: 20 }}
+            className="bg-white rounded-[3rem] p-8 shadow-2xl shadow-slate-300 border border-slate-50 mb-12"
           >
             <Text className="text-2xl font-bold text-gray-800 mb-2 text-center">
               Send a Message
             </Text>
-            <Text className="text-gray-600 mb-8 text-sm text-center">
-              Fill out the form and we'll reply within 24 hours.
+            <Text className="text-gray-400 mb-8 text-sm text-center">
+              We usually reply within 24 hours.
             </Text>
 
             <View className="space-y-5">
-              <View>
-                <Text className="text-sm font-bold text-gray-700 ml-1 mb-2">
+              <View className="mb-4">
+                <Text className="text-xs font-bold text-gray-500 uppercase ml-1 mb-2">
                   Full Name
                 </Text>
                 <TextInput
-                  placeholder="John Doe"
+                  placeholder="e.g. Abu Bakar"
                   className="bg-gray-50 p-5 rounded-2xl text-gray-800 border border-gray-100"
                   value={formData.name}
                   onChangeText={(t) => setFormData({ ...formData, name: t })}
@@ -225,13 +207,14 @@ const ContactUs = () => {
                 )}
               </View>
 
-              <View>
-                <Text className="text-sm font-bold text-gray-700 ml-1 mb-2 mt-4">
+              <View className="mb-4">
+                <Text className="text-xs font-bold text-gray-500 uppercase ml-1 mb-2">
                   Email Address
                 </Text>
                 <TextInput
-                  placeholder="john@example.com"
+                  placeholder="name@email.com"
                   keyboardType="email-address"
+                  autoCapitalize="none"
                   className="bg-gray-50 p-5 rounded-2xl text-gray-800 border border-gray-100"
                   value={formData.email}
                   onChangeText={(t) => setFormData({ ...formData, email: t })}
@@ -243,19 +226,21 @@ const ContactUs = () => {
                 )}
               </View>
 
-              <View>
-                <Text className="text-sm font-bold text-gray-700 ml-1 mb-2 mt-4">
+              <View className="mb-4">
+                <Text className="text-xs font-bold text-gray-500 uppercase ml-1 mb-2">
                   Subject
                 </Text>
                 <TouchableOpacity
                   onPress={() => setShowDropdown(!showDropdown)}
                   className="bg-gray-50 p-5 rounded-2xl border border-gray-100 flex-row justify-between items-center"
                 >
-                  <Text className="text-gray-800">{formData.subject}</Text>
+                  <Text className="text-gray-800 font-medium">
+                    {formData.subject}
+                  </Text>
                   <ChevronDown size={20} color="#E25555" />
                 </TouchableOpacity>
                 {showDropdown && (
-                  <View className="bg-white mt-2 rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+                  <View className="bg-white mt-2 rounded-2xl border border-gray-100 shadow-xl overflow-hidden z-50">
                     {subjects.map((s) => (
                       <TouchableOpacity
                         key={s}
@@ -263,7 +248,7 @@ const ContactUs = () => {
                           setFormData({ ...formData, subject: s });
                           setShowDropdown(false);
                         }}
-                        className="p-4 border-b border-gray-50"
+                        className="p-5 border-b border-gray-50"
                       >
                         <Text className="text-gray-700">{s}</Text>
                       </TouchableOpacity>
@@ -272,16 +257,16 @@ const ContactUs = () => {
                 )}
               </View>
 
-              <View>
-                <Text className="text-sm font-bold text-gray-700 ml-1 mb-2 mt-4">
+              <View className="mb-6">
+                <Text className="text-xs font-bold text-gray-500 uppercase ml-1 mb-2">
                   Message
                 </Text>
                 <TextInput
-                  placeholder="How can we help you?"
+                  placeholder="Tell us how we can help..."
                   multiline
                   numberOfLines={5}
                   textAlignVertical="top"
-                  className="bg-gray-50 p-5 rounded-2xl text-gray-800 border border-gray-100 h-36"
+                  className="bg-gray-50 p-5 rounded-2xl text-gray-800 border border-gray-100 h-32"
                   value={formData.message}
                   onChangeText={(t) => setFormData({ ...formData, message: t })}
                 />
@@ -295,20 +280,28 @@ const ContactUs = () => {
               <TouchableOpacity
                 onPress={handleSubmit}
                 disabled={loading}
-                className="bg-[#E25555] mt-6 py-5 rounded-2xl flex-row items-center justify-center shadow-xl shadow-red-200"
+                className={`h-16 rounded-2xl flex-row items-center justify-center shadow-lg ${
+                  loading ? "bg-gray-300" : "bg-[#E25555] shadow-red-200"
+                }`}
               >
-                <Text className="text-white font-bold text-lg mr-2">
-                  {loading ? "Sending..." : "Send Message"}
-                </Text>
-                {!loading && <Send size={20} color="white" />}
+                {loading ? (
+                  <ActivityIndicator color="white" />
+                ) : (
+                  <>
+                    <Text className="text-white font-bold text-lg mr-3">
+                      Send Message
+                    </Text>
+                    <Send size={18} color="white" />
+                  </>
+                )}
               </TouchableOpacity>
             </View>
           </Animated.View>
         </View>
 
-        <View className="py-8 items-center border-t border-gray-100 mx-6">
-          <Text className="text-gray-400 text-xs font-bold uppercase tracking-widest">
-            Blood Donation © 2026
+        <View className="py-10 items-center">
+          <Text className="text-gray-300 text-[10px] font-bold uppercase tracking-[4px]">
+            PakBlood • 2026
           </Text>
         </View>
       </ScrollView>
@@ -318,8 +311,7 @@ const ContactUs = () => {
 
 export default ContactUs;
 
-{
-  /* --- NAYA CARD: HOW IT WORKS ---
+/* --- NAYA CARD: HOW IT WORKS ---
         <View className="mt-10 px-6">
           <Text className="text-slate-900 text-2xl font-black mb-6">How it Works</Text>
           <View className="bg-white p-6 rounded-[30px] shadow-md flex-row justify-between items-center border border-slate-50">
@@ -339,7 +331,6 @@ export default ContactUs;
             ))}
           </View>
         </View> */
-}
 
 //  {/* Section 2: Informational Cards (Malomati Cards) */}
 //           <Text style={{ color: "#94a3b8", fontWeight: "900", fontSize: 12, letterSpacing: 1.5, marginTop: 20, marginBottom: 15, marginLeft: 5 }}>

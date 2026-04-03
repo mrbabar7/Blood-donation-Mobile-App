@@ -1,393 +1,304 @@
-import React, { useState } from "react";
+import React, { useState, useMemo, useCallback } from "react";
 import {
   View,
   ScrollView,
   TouchableOpacity,
-  Dimensions,
   ActivityIndicator,
-  Image,
   Modal,
   FlatList,
-  SafeAreaView,
-  Platform,
-  StatusBar,
   TextInput,
+  Pressable,
+  Image,
+  Alert,
 } from "react-native";
-import { MotiView } from "moti";
-import { Ionicons, FontAwesome6 } from "@expo/vector-icons";
+import { useRouter } from "expo-router"; // This requires the component to be inside /app folder tree
+import { MotiView, AnimatePresence } from "moti";
+import { Ionicons } from "@expo/vector-icons";
 import AppText from "../components/AppText";
 import { State, City } from "country-state-city";
 import HomeBanner from "../assets/home.png";
-import { Easing } from "react-native-reanimated";
-import Header from "../components/Header";
-const { width, height } = Dimensions.get("window");
-const bloodTypes = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
+
+// Pro-tip: Use your computer's local IP (e.g., 192.168.1.10) for physical device testing
+const API_URL = process.env.EXPO_PUBLIC_API_URL;
+
 const countryCode = "PK";
 
-const MobileHero = () => {
+export default function Home() {
+  const router = useRouter();
   const [province, setProvince] = useState("");
-  const [district, setDistrict] = useState("");
+  const [city, setCity] = useState("");
   const [bloodType, setBloodType] = useState("");
   const [loading, setLoading] = useState(false);
   const [modalType, setModalType] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
-
-  const allProvinces = State.getStatesOfCountry(countryCode);
-  const allCities = province
-    ? City.getCitiesOfState(countryCode, province)
-    : [];
-
-  const filteredData = (
-    modalType === "province" ? allProvinces : allCities
-  ).filter((item) =>
-    item.name.toLowerCase().includes(searchQuery.toLowerCase()),
+  const bloodTypes = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
+  const allProvinces = useMemo(() => State.getStatesOfCountry(countryCode), []);
+  const allCities = useMemo(
+    () => (province ? City.getCitiesOfState(countryCode, province) : []),
+    [province],
   );
 
-  const handleSearch = () => {
-    if (!province || !district || !bloodType) return;
-    setLoading(true);
-    setTimeout(() => setLoading(false), 1500);
+  const filteredData = useMemo(() => {
+    const source = modalType === "province" ? allProvinces : allCities;
+    if (!searchQuery) return source.slice(0, 50);
+    return source.filter((item) =>
+      item.name.toLowerCase().includes(searchQuery.toLowerCase()),
+    );
+  }, [modalType, searchQuery, allProvinces, allCities]);
+
+  const closeModal = () => {
+    setSearchQuery("");
+    setModalType(null);
   };
 
-  const SelectorModal = () => (
-    <Modal
-      visible={!!modalType}
-      animationType="fade"
-      transparent={true}
-      onRequestClose={() => {
-        setModalType(null);
-        setSearchQuery("");
-      }}
-    >
-      <View
-        style={{
-          flex: 1,
-          backgroundColor: "rgba(0,0,0,0.7)",
-          justifyContent: "center",
-          alignItems: "center",
+  const handleFindDonors = async () => {
+    // Basic validation
+    if (!province || !city || !bloodType) {
+      Alert.alert(
+        "Missing Info",
+        "Please select province, city, and blood type.",
+      );
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const query = new URLSearchParams({
+        province,
+        district: city,
+        bloodType,
+      }).toString();
+
+      const response = await fetch(
+        `${API_URL}/api/seeker/hero/search?${query}`,
+      );
+      const data = await response.json();
+
+      // Ensure your file app/donor-results.js (or .tsx) exists!
+      router.push({
+        pathname: "/donor-results",
+        params: {
+          donors: JSON.stringify(data),
+          city: city,
+          bloodType: bloodType,
+        },
+      });
+    } catch (err) {
+      console.error("Search Error:", err);
+      Alert.alert(
+        "Connection Error",
+        "Could not reach the server. Check your IP/Network.",
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const renderItem = useCallback(
+    ({ item }) => (
+      <TouchableOpacity
+        onPress={() => {
+          if (modalType === "province") {
+            setProvince(item.isoCode);
+            setCity(""); // Reset city when province changes
+          } else {
+            setCity(item.name);
+          }
+          closeModal();
         }}
+        className="py-5 border-b border-slate-50 flex-row justify-between items-center"
       >
-        <MotiView
-          from={{ scale: 0.9, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          style={{
-            backgroundColor: "white",
-            width: width * 0.9,
-            height: height * 0.7,
-            borderRadius: 35,
-            padding: 20,
-          }}
-        >
-          <View className="flex-row justify-between items-center mb-6">
-            <AppText className="text-xl font-black color-slate-800">
-              SELECT {modalType?.toUpperCase()}
-            </AppText>
-            <TouchableOpacity
-              onPress={() => {
-                setModalType(null);
-                setSearchQuery("");
-              }}
-            >
-              <Ionicons name="close-circle" size={32} color="#ef4444" />
-            </TouchableOpacity>
-          </View>
-
-          <View className="bg-slate-100 rounded-2xl px-4 flex-row items-center mb-4 border border-slate-200">
-            <Ionicons name="search" size={20} color="#94a3b8" />
-            <TextInput
-              placeholder={`Search ${modalType}...`}
-              style={{
-                flex: 1,
-                height: 55,
-                marginLeft: 10,
-                fontWeight: "600",
-                color: "#1e293b",
-                outlineStyle: "none",
-              }}
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-              autoFocus={true}
-              selectionColor="#ef4444"
-              placeholderTextColor="#94a3b8"
-            />
-          </View>
-
-          <FlatList
-            data={filteredData}
-            keyExtractor={(item, index) => index.toString()}
-            keyboardShouldPersistTaps="handled"
-            ListEmptyComponent={() => (
-              <View className="py-20 items-center justify-center">
-                <Ionicons name="search-outline" size={60} color="#cbd5e1" />
-                <AppText className="text-slate-400 font-bold mt-4 text-center">
-                  Sorry! No {modalType} found {"\n"} matching "{searchQuery}"
-                </AppText>
-              </View>
-            )}
-            renderItem={({ item }) => (
-              <TouchableOpacity
-                className="py-5 border-b border-slate-50 flex-row items-center justify-between"
-                onPress={() => {
-                  if (modalType === "province") {
-                    setProvince(item.isoCode);
-                    setDistrict("");
-                  } else {
-                    setDistrict(item.name);
-                  }
-                  setModalType(null);
-                  setSearchQuery("");
-                }}
-              >
-                <AppText className="text-slate-700 text-lg font-bold">
-                  {item.name}
-                </AppText>
-                <Ionicons name="chevron-forward" size={16} color="#e2e8f0" />
-              </TouchableOpacity>
-            )}
-          />
-        </MotiView>
-      </View>
-    </Modal>
+        <AppText variant="medium" className="text-lg text-slate-700">
+          {item.name}
+        </AppText>
+        <Ionicons name="chevron-forward" size={16} color="#cbd5e1" />
+      </TouchableOpacity>
+    ),
+    [modalType],
   );
 
   return (
-    <SafeAreaView
-      style={{
-        flex: 1,
-        backgroundColor: "#fff",
-        paddingTop: Platform.OS === "android" ? StatusBar.currentHeight : 0,
-      }}
-    >
-      <Header />
-      <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
-        <View
-          style={{
-            width: width,
-            height: height * 0.28,
-            position: "relative",
-            overflow: "hidden",
-          }}
-        >
+    <View className="flex-1 bg-white">
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: 40 }}
+      >
+        {/* Banner Section */}
+        <View className="w-full aspect-[16/9] overflow-hidden">
           <Image
             source={HomeBanner}
-            style={{ width: "100%", height: "100%" }}
-            resizeMode="contain"
+            className="w-full h-full"
+            resizeMode="cover"
           />
-          <View
-            style={{
-              position: "absolute",
-              top: 15,
-              left: 0,
-              right: 0,
-              zIndex: 10,
-            }}
-          >
-            <MotiView
-              from={{ translateX: width }}
-              animate={{ translateX: -width * 1.3 }}
-              transition={{
-                loop: true,
-                duration: 18000,
-                type: "timing",
-                easing: Easing.linear,
-              }}
-              style={{ flexDirection: "row" }}
-            >
-              <AppText
-                className="text-black font-black text-[19px]"
-                style={{
-                  textShadowOffset: { width: 3, height: 8 },
-                  textShadowRadius: 4,
-                }}
-              >
-                وَمَنْ أَحْيَاهَا فَكَأَنَّمَا أَحْيَا النَّاسَ جَمِيعًا (سورۃ
-                المائدہ: 32) "اور جس نے کسی ایک انسان کی جان بچائی، گویا اس نے
-                پوری انسانیت کو زندگی بخش دی"
-              </AppText>
-            </MotiView>
-          </View>
-          <View
-            style={{
-              backgroundColor: "rgba(153, 27, 27, 0.1)",
-              position: "absolute",
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-            }}
-          />
+          <View className="absolute inset-0 bg-red-900/10" />
         </View>
 
+        {/* Search Card */}
         <MotiView
-          from={{ y: 30, opacity: 0 }}
+          from={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
-          className="px-5 -mt-12"
+          className="mx-5 -mt-10 bg-white rounded-[40px] p-6 shadow-2xl shadow-red-200 border border-red-50"
         >
-          <View
-            style={{
-              backgroundColor: "#e5e7eb",
-              padding: 30,
-              shadowOffset: { width: 0, height: 15 },
-              shadowOpacity: 0.15,
-              shadowRadius: 30,
-              elevation: 10,
-              borderWeight: 1,
-              borderColor: "#fef2f2",
-            }}
-          >
-            <AppText
-              style={{ color: "#ef4444" }}
-              className="text-[20px] font-black text-center mb-8 uppercase tracking-tighter"
-            >
-              Find Nearby Blood Donors
+          <View className="flex-row items-center mb-6 px-2">
+            <View className="w-2 h-6 bg-red-600 rounded-full mr-3" />
+            <AppText variant="bold" className="text-xl text-slate-800">
+              Quick Search
             </AppText>
-            <View className="gap-y-4">
-              <TouchableOpacity
-                onPress={() => setModalType("province")}
-                className="bg-slate-50 rounded-3xl px-6 h-20 flex-row items-center justify-between border border-slate-100"
-              >
-                <View className="flex-row items-center">
-                  <View className="bg-red-50 p-3 rounded-2xl">
-                    <Ionicons name="map" size={22} color="#ef4444" />
-                  </View>
-                  <View className="ml-4">
-                    <AppText className="text-[12px] text-slate-400 font-bold uppercase">
-                      Province
-                    </AppText>
-                    <AppText
-                      className={`text-xl font-black ${province ? "text-slate-800" : "text-slate-300"}`}
-                    >
-                      {province
-                        ? State.getStateByCodeAndCountry(province, countryCode)
-                            ?.name
-                        : "Select Province"}
-                    </AppText>
-                  </View>
-                </View>
-                <Ionicons name="chevron-down" size={18} color="#cbd5e1" />
-              </TouchableOpacity>
+          </View>
 
-              <TouchableOpacity
-                onPress={() => province && setModalType("city")}
-                disabled={!province}
-                className={`rounded-3xl px-6 h-20 flex-row items-center justify-between border ${!province ? "bg-slate-50 opacity-60" : "bg-slate-50 border-slate-100"}`}
-              >
-                <View className="flex-row items-center">
-                  <View className="bg-red-50 p-3 rounded-2xl">
-                    <Ionicons name="location" size={22} color="#ef4444" />
-                  </View>
-                  <View className="ml-4">
-                    <AppText className="text-[12px] text-slate-400 font-bold uppercase">
-                      City
-                    </AppText>
-                    <AppText
-                      className={`text-xl font-black ${district ? "text-slate-800" : "text-slate-300"}`}
-                    >
-                      {district || "Select City"}
-                    </AppText>
-                  </View>
-                </View>
-                <Ionicons name="chevron-down" size={18} color="#cbd5e1" />
-              </TouchableOpacity>
-
-              <View className="mt-4">
-                <AppText
-                  style={{ color: "#ef4444" }}
-                  className="text-red-500 font-bold text-[14px] uppercase ml-2 mb-4"
-                >
-                  Blood Group
-                </AppText>
-                <View className="flex-row flex-wrap justify-between">
-                  {bloodTypes.map((type) => (
-                    <TouchableOpacity
-                      key={type}
-                      onPress={() => setBloodType(type)}
-                      style={{
-                        width: "23%",
-                        aspectRatio: 1,
-                        marginBottom: 10,
-                        borderRadius: 22,
-                        alignItems: "center",
-                        justifyContent: "center",
-                        backgroundColor:
-                          bloodType === type ? "#ef4444" : "#fff",
-                        borderWidth: 2,
-                        borderColor: bloodType === type ? "#ef4444" : "#f1f5f9",
-                      }}
-                    >
-                      <AppText
-                        className={`font-black text-xl ${bloodType === type ? "text-white" : "text-slate-600"}`}
-                      >
-                        {type}
-                      </AppText>
-                    </TouchableOpacity>
-                  ))}
-                </View>
+          <View className="space-y-4">
+            {/* Province Selection */}
+            <TouchableOpacity
+              onPress={() => setModalType("province")}
+              className="flex-row items-center bg-red-50/50 h-16 px-5 rounded-2xl border border-red-100 mb-4"
+            >
+              <View className="bg-white p-2 rounded-xl shadow-sm">
+                <Ionicons name="map-sharp" size={20} color="#dc2626" />
               </View>
-            </View>
-
-            <View className="mt-8 gap-y-4">
-              <TouchableOpacity
-                onPress={handleSearch}
-                disabled={!bloodType || !province || !district}
-                style={{
-                  height: 65,
-                  borderRadius: 25,
-                  flexDirection: "row",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  backgroundColor:
-                    !bloodType || !province || !district
-                      ? "#fca5a5"
-                      : "#ef4444",
-                  shadowColor: "#000",
-                  shadowOffset: { width: 0, height: 5 },
-                  shadowOpacity: 0.2,
-                  shadowRadius: 10,
-                  elevation: 5,
-                }}
-              >
-                {loading ? (
-                  <ActivityIndicator color="#fff" />
-                ) : (
-                  <>
-                    <Ionicons name="search" size={24} color="#fff" />
-                    <AppText
-                      style={{
-                        color: "#fff",
-                        fontWeight: "900",
-                        fontSize: 16,
-                        marginLeft: 8,
-                      }}
-                    >
-                      Find Donors
-                    </AppText>
-                  </>
-                )}
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={{
-                  height: 65,
-                  borderRadius: 25,
-                  flexDirection: "row",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  backgroundColor: "#0f172a",
-                }}
-              >
-                <FontAwesome6 name="droplet" size={20} color="white" />
-                <AppText className="text-white font-black text-lg ml-3 uppercase">
-                  Become a Donor
+              <View className="ml-4 flex-1">
+                <AppText className="text-[10px] text-red-400 font-bold uppercase tracking-wider">
+                  Province
                 </AppText>
-              </TouchableOpacity>
+                <AppText variant="medium" className="text-slate-700 text-base">
+                  {province
+                    ? State.getStateByCodeAndCountry(province, countryCode)
+                        ?.name
+                    : "Select Province"}
+                </AppText>
+              </View>
+            </TouchableOpacity>
+
+            {/* City Selection */}
+            <TouchableOpacity
+              onPress={() => province && setModalType("city")}
+              disabled={!province}
+              className={`flex-row items-center bg-red-50/50 h-16 px-5 rounded-2xl border border-red-100 ${!province && "opacity-50"}`}
+            >
+              <View className="bg-white p-2 rounded-xl shadow-sm">
+                <Ionicons name="location-sharp" size={20} color="#dc2626" />
+              </View>
+              <View className="ml-4 flex-1">
+                <AppText className="text-[10px] text-red-400 font-bold uppercase tracking-wider">
+                  City
+                </AppText>
+                <AppText variant="medium" className="text-slate-700 text-base">
+                  {city || "Select City"}
+                </AppText>
+              </View>
+            </TouchableOpacity>
+          </View>
+
+          {/* Blood Type Grid */}
+          <View className="mt-8 mb-6">
+            <AppText
+              variant="bold"
+              className="text-xs text-slate-400 uppercase mb-4 ml-2"
+            >
+              Select Blood Type
+            </AppText>
+            <View className="flex-row flex-wrap justify-between">
+              {bloodTypes.map((type) => (
+                <TouchableOpacity
+                  key={type}
+                  // onPress={() => setBloodType(type)}
+                  className={`w-[23%] aspect-square rounded-2xl items-center justify-center mb-3 border-2 ${
+                    bloodType === type
+                      ? "bg-red-600 border-red-600 shadow-lg shadow-red-200"
+                      : "bg-white border-slate-100"
+                  }`}
+                >
+                  <AppText
+                    variant="bold"
+                    className={`text-lg ${bloodType === type ? "text-white" : "text-slate-600"}`}
+                  >
+                    {type}
+                  </AppText>
+                </TouchableOpacity>
+              ))}
             </View>
           </View>
+
+          {/* Search Button */}
+          <TouchableOpacity
+            onPress={handleFindDonors}
+            className={`h-16 rounded-2xl flex-row items-center justify-center shadow-xl ${
+              !bloodType || !city ? "bg-slate-200" : "bg-red-600 shadow-red-200"
+            }`}
+            disabled={!bloodType || !city || loading}
+          >
+            {loading ? (
+              <ActivityIndicator color="white" />
+            ) : (
+              <>
+                <Ionicons name="search-outline" size={22} color="white" />
+                <AppText variant="bold" className="text-white ml-2 text-lg">
+                  Find Donors
+                </AppText>
+              </>
+            )}
+          </TouchableOpacity>
         </MotiView>
-
-        <SelectorModal />
       </ScrollView>
-    </SafeAreaView>
-  );
-};
 
-export default MobileHero;
+      {/* Modal for Selection */}
+      <AnimatePresence>
+        {modalType && (
+          <Modal
+            transparent
+            visible={!!modalType}
+            animationType="none"
+            onRequestClose={closeModal}
+          >
+            <View className="flex-1 justify-end">
+              <MotiView
+                from={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="absolute inset-0 bg-black/50"
+              >
+                <Pressable className="flex-1" onPress={closeModal} />
+              </MotiView>
+
+              <MotiView
+                from={{ translateY: 500 }}
+                animate={{ translateY: 0 }}
+                exit={{ translateY: 500 }}
+                transition={{ type: "timing", duration: 300 }}
+                className="bg-white rounded-t-[40px] h-[75%] px-6 pt-10 shadow-2xl"
+              >
+                <View className="w-12 h-1.5 bg-slate-200 rounded-full self-center mb-8" />
+                <AppText
+                  variant="bold"
+                  className="text-2xl text-slate-800 mb-6"
+                >
+                  Select {modalType}
+                </AppText>
+
+                <View className="bg-slate-50 rounded-2xl flex-row items-center px-4 h-14 mb-6 border border-slate-100">
+                  <Ionicons name="search" size={20} color="#94a3b8" />
+                  <TextInput
+                    className="flex-1 ml-2 font-medium"
+                    placeholder={`Search ${modalType}...`}
+                    value={searchQuery}
+                    onChangeText={setSearchQuery}
+                  />
+                </View>
+
+                <FlatList
+                  data={filteredData}
+                  keyExtractor={(item) => item.isoCode || item.name}
+                  renderItem={renderItem}
+                  initialNumToRender={15}
+                  maxToRenderPerBatch={10}
+                  windowSize={5}
+                  removeClippedSubviews={true}
+                  showsVerticalScrollIndicator={false}
+                />
+              </MotiView>
+            </View>
+          </Modal>
+        )}
+      </AnimatePresence>
+    </View>
+  );
+}

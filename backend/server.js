@@ -45,13 +45,35 @@ app.set("trust proxy", 1);
 app.use(express.json());
 app.use(cookieParser());
 
+const allowedOrigins = [
+  process.env.FRONTEND_URL_WEB, // http://localhost:5173
+  process.env.FRONTEND_URL_MOBILE, // http://192.168.1.101:8081
+  process.env.BACKEND_SERVER, // The backend IP itself
+];
+
 app.use(
   cors({
-    origin: ["http://localhost:5173", "https://pakblood.vercel.app"],
+    origin: function (origin, callback) {
+      // Allow requests with no origin (like mobile apps or Postman)
+      if (!origin) return callback(null, true);
+
+      if (allowedOrigins.indexOf(origin) !== -1) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   }),
 );
+// app.use(
+//   cors({
+//     origin: ["http://localhost:8081", "https://pakblood.vercel.app"],
+//     credentials: true,
+//     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+//   }),
+// );
 app.use(passport.initialize());
 app.use("/health", (req, res) => {
   res.status(200).json({ message: "Health check passed!" });

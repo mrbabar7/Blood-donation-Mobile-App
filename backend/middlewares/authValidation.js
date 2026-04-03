@@ -6,25 +6,30 @@ const validateSignup = (req, res, next) => {
       "string.empty": "Username is required",
       "string.min": "Name must have at least 5 characters.",
       "string.max": "Name must not exceed 20 characters.",
+      "any.required": "Username is required",
     }),
 
     email: Joi.string().email().required().messages({
       "string.empty": "Email is required",
       "string.email": "Please provide a valid email address",
+      "any.required": "Email is required",
     }),
-    password: Joi.string().min(4).max(12).required().messages({
+    // Increased to 6 to match your signUp.js logic
+    password: Joi.string().min(6).max(12).required().messages({
       "string.empty": "Password is required",
-      "string.min": "Password must be at least 4 characters long",
+      "string.min": "Password must be at least 6 characters long",
       "string.max": "Password must not exceed 12 characters",
+      "any.required": "Password is required",
     }),
   });
 
   const { error } = signUpObject.validate(req.body);
   if (error) {
-    return res.status(404).json({
+    // Changed status to 400 (Standard for Validation Errors)
+    return res.status(400).json({
+      success: false,
       field: error.details[0].path[0],
       message: error.details[0].message,
-      success: false,
     });
   }
   next();
@@ -35,20 +40,22 @@ const validateLogin = (req, res, next) => {
     email: Joi.string().email().required().messages({
       "string.empty": "Email is required",
       "string.email": "Please provide a valid email address",
+      "any.required": "Email is required",
     }),
     password: Joi.string().min(4).max(12).required().messages({
       "string.empty": "Password is required",
       "string.min": "Password must be at least 4 characters long",
       "string.max": "Password must not exceed 12 characters",
+      "any.required": "Password is required",
     }),
   });
 
   const { error } = logInObject.validate(req.body);
   if (error) {
-    return res.status(404).json({
+    return res.status(400).json({
+      success: false,
       field: error.details[0].path[0],
       message: error.details[0].message,
-      success: false,
     });
   }
   next();

@@ -2,42 +2,44 @@ import React, { useState } from "react";
 import {
   View,
   TouchableOpacity,
-  Modal,
   SafeAreaView,
   ScrollView,
-  Platform,
-  Text,
   Dimensions,
+  Pressable,
+  StyleSheet,
+  Text,
+  StatusBar,
+  Platform,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import Exact3DRubyDrop from "../components/Exact3DRubyDrop";
+import { MotiView, AnimatePresence } from "moti";
+import AppText from "./AppText";
+import Exact3DRubyDrop from "./Exact3DRubyDrop";
 
 const { width } = Dimensions.get("window");
+const MENU_WIDTH = width * 0.75;
 
 const Header = () => {
   const router = useRouter();
   const [menuVisible, setMenuVisible] = useState(false);
 
   const menuItems = [
-    { title: "Home", icon: "home-outline", path: "/home", color: "#dc2626" },
+    { title: "Home", icon: "home-outline", path: "/home" },
     {
-      title: "Emergency ",
+      title: "Emergency",
       icon: "alert-circle-outline",
-      path: "/(Landing-Page)/Emergency",
-      color: "#dc2626",
+      path: "/(landing-Page)/emergency",
     },
     {
       title: "About Us",
       icon: "help-circle-outline",
-      path: "/(Landing-Page)/About",
-      color: "#dc2626",
+      path: "/(landing-Page)/about",
     },
     {
       title: "Contact Us",
       icon: "call-outline",
-      path: "/(Landing-Page)/Contact",
-      color: "#dc2626",
+      path: "/(landing-Page)/contact",
     },
   ];
 
@@ -47,109 +49,131 @@ const Header = () => {
   };
 
   return (
-    <View
-      className="w-full px-5 flex-row items-center justify-between h-20 bg-white shadow-sm"
-      style={{ paddingTop: Platform.OS === "ios" ? 40 : 10 }}
-    >
-      <View className="flex-row items-center">
-        <View style={{ width: 30, height: 40 }}>
-          <Exact3DRubyDrop />
-        </View>
-        <Text
-          style={{
-            fontSize: 22,
-            fontWeight: "bold",
-            marginLeft: 10,
-            color: "#0f172a",
-          }}
-        >
-          Blood<Text style={{ color: "#dc2626" }}>Donation</Text>
-        </Text>
-      </View>
+    <>
+      <StatusBar
+        barStyle="dark-content" // This makes the time/icons BLACK (perfect for white headers)
+        backgroundColor="white" // For Android: makes the bar background match your header
+        translucent={false} // Ensures the app content starts BELOW the status bar
+      />
+      <SafeAreaView className="bg-white shadow-sm border-b border-slate-50">
+        <View className="w-full px-5 flex-row items-center justify-between h-20">
+          {/* --- LOGO SECTION --- */}
+          <View className="flex-row items-end">
+            {/* "Bl" */}
+            <Text variant="heading" className="text-2xl font-bold text-red-600">
+              Bl
+            </Text>
 
-      <TouchableOpacity
-        onPress={() => setMenuVisible(true)}
-        className="p-2 rounded-xl bg-slate-100"
-      >
-        <Ionicons name="menu" size={30} color="black" />
-      </TouchableOpacity>
-
-      <Modal
-        animationType="slide"
-        transparent={false}
-        visible={menuVisible}
-        onRequestClose={() => setMenuVisible(false)}
-      >
-        <SafeAreaView className="flex-1 bg-white">
-          <View className="px-6 py-4 flex-row items-center justify-between border-b border-slate-100">
-            <Text style={{ fontSize: 20, fontWeight: "700", color: "#1e293b" }}>
-              Quick Access
-            </Text>{" "}
-            <TouchableOpacity
-              onPress={() => setMenuVisible(false)}
-              className="p-2"
-            >
-              <Ionicons name="close" size={32} color="black" />
-            </TouchableOpacity>
-          </View>
-
-          <ScrollView className="px-6 pt-6">
-            {menuItems.map((item, index) => (
-              <TouchableOpacity
-                key={index}
-                onPress={() => handleNavigation(item.path)}
-                className="flex-row items-center py-5 border-b border-slate-50"
-              >
-                <Ionicons
-                  name={item.icon}
-                  size={24}
-                  color={item.color || "#475569"}
-                />
-                <Text
-                  style={{
-                    fontSize: 18,
-                    marginLeft: 15,
-                    color: "#1e293b",
-                    fontWeight: "500",
-                  }}
-                >
-                  {item.title}
-                </Text>
-              </TouchableOpacity>
-            ))}
-
-            <View className="mt-10 space-y-4">
-              <TouchableOpacity
-                onPress={() => handleNavigation("/login")}
-                style={{ backgroundColor: "#16a34a" }}
-                className="w-full h-14 rounded-2xl items-center justify-center shadow-lg shadow-green-200"
-              >
-                <Text
-                  style={{ color: "white", fontWeight: "bold", fontSize: 16 }}
-                >
-                  Log In
-                </Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                onPress={() => handleNavigation("/signup")}
-                className="w-full h-14 bg-red-600 rounded-2xl items-center justify-center shadow-lg shadow-red-200"
-              >
-                <Text
-                  style={{ color: "white", fontWeight: "bold", fontSize: 16 }}
-                >
-                  Create Account
-                </Text>
-              </TouchableOpacity>
+            {/* First Droplet (o) */}
+            <View style={{ width: 14, height: 20, marginBottom: 4, mx: 1 }}>
+              <Exact3DRubyDrop />
             </View>
 
-            <Text className="text-center text-slate-400 mt-8 text-xs">
-              Saving Lives Since 2026
+            {/* Second Droplet (o) */}
+            <View style={{ width: 14, height: 20, marginBottom: 4, mx: 1 }}>
+              <Exact3DRubyDrop />
+            </View>
+
+            {/* "dDonation" */}
+            <Text variant="heading" className="text-2xl font-bold text-red-600">
+              dDonation
             </Text>
-          </ScrollView>
-        </SafeAreaView>
-      </Modal>
-    </View>
+          </View>
+
+          <TouchableOpacity
+            onPress={() => setMenuVisible(true)}
+            activeOpacity={0.7}
+            className="w-10 h-10 items-center justify-center rounded-xl bg-slate-50"
+          >
+            <Ionicons name="grid-outline" size={22} color="#1e293b" />
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+
+      {/* Side Drawer Menu */}
+      <AnimatePresence>
+        {menuVisible && (
+          <View style={StyleSheet.absoluteFill} className="z-50">
+            <MotiView
+              from={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="flex-1 bg-black/40"
+            >
+              <Pressable
+                className="flex-1"
+                onPress={() => setMenuVisible(false)}
+              />
+            </MotiView>
+
+            <MotiView
+              from={{ translateX: MENU_WIDTH }}
+              animate={{ translateX: 0 }}
+              exit={{ translateX: MENU_WIDTH }}
+              transition={{ type: "timing", duration: 300 }}
+              style={{ width: MENU_WIDTH }}
+              className="absolute right-0 top-0 bottom-0 bg-white shadow-2xl"
+            >
+              <SafeAreaView className="flex-1">
+                <View className="px-6 py-6 flex-row items-center justify-between border-b border-slate-50">
+                  <AppText variant="bold" className="text-lg text-slate-800">
+                    Menu
+                  </AppText>
+                  <TouchableOpacity
+                    onPress={() => setMenuVisible(false)}
+                    className="bg-slate-100 rounded-full p-1"
+                  >
+                    <Ionicons name="close" size={24} color="#475569" />
+                  </TouchableOpacity>
+                </View>
+
+                <ScrollView className="flex-1 px-6 pt-4">
+                  {menuItems.map((item, index) => (
+                    <TouchableOpacity
+                      key={index}
+                      onPress={() => handleNavigation(item.path)}
+                      className="flex-row items-center py-4 mb-2"
+                    >
+                      <View className="w-10 h-10 bg-red-50 rounded-xl items-center justify-center">
+                        <Ionicons name={item.icon} size={20} color="#dc2626" />
+                      </View>
+                      <AppText
+                        variant="medium"
+                        className="ml-4 text-slate-700 text-base"
+                      >
+                        {item.title}
+                      </AppText>
+                    </TouchableOpacity>
+                  ))}
+
+                  <View className="mt-8 gap-y-3">
+                    <TouchableOpacity
+                      onPress={() => handleNavigation("/login")}
+                      className="w-full h-12 bg-slate-900 rounded-xl items-center justify-center"
+                    >
+                      <AppText className="text-white font-bold">Log In</AppText>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      onPress={() => handleNavigation("/signup")}
+                      className="w-full h-12 bg-red-600 rounded-xl items-center justify-center"
+                    >
+                      <AppText className="text-white font-bold">
+                        Create Account
+                      </AppText>
+                    </TouchableOpacity>
+                  </View>
+
+                  <AppText className="text-center text-slate-400 mt-10 text-[10px] uppercase tracking-widest">
+                    PakBlood Community • 2026
+                  </AppText>
+                </ScrollView>
+              </SafeAreaView>
+            </MotiView>
+          </View>
+        )}
+      </AnimatePresence>
+    </>
   );
 };
 

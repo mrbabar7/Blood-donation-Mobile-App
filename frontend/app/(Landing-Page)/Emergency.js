@@ -7,7 +7,6 @@ import {
   Linking,
   Dimensions,
   SafeAreaView,
-  StatusBar,
 } from "react-native";
 import {
   Ionicons,
@@ -24,8 +23,6 @@ const Emergency = () => {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }}>
-      <StatusBar barStyle="light-content" />
-
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 40 }}

@@ -20,10 +20,7 @@ import {
 } from "lucide-react-native";
 import AppText from "../../components/AppText";
 
-const apiUrl =
-  Platform.OS === "web"
-    ? "http://localhost:5000"
-    : process.env.EXPO_PUBLIC_API_URL || "http://192.168.1.xx:5000";
+const apiUrl = process.env.EXPO_PUBLIC_API_URL;
 
 export default function SignUp() {
   const router = useRouter();
@@ -39,8 +36,11 @@ export default function SignUp() {
   const handleSignUp = async () => {
     let newErrors = {};
 
+    // 1. FRONTEND PRE-VALIDATION (Matches Joi)
     if (!formData.name) {
       newErrors.name = "Full Name is required";
+    } else if (formData.name.length < 5) {
+      newErrors.name = "Name must be at least 5 characters";
     }
 
     if (!formData.email) {
@@ -73,19 +73,30 @@ export default function SignUp() {
       const data = await res.json();
 
       if (data.success) {
-        Alert.alert("Success", "Please verify your email address!");
+        // Successful signup - redirect to OTP verification
+        Alert.alert(
+          "Account Created",
+          "A 6-digit code has been sent to your email.",
+        );
+
         router.push({
           pathname: "/verifyotp",
-          params: { email: formData.email },
+          // Pass the email from the backend response or formData
+          params: { email: data.user?.email || formData.email },
         });
       } else {
+        // 2. DYNAMIC ERROR MAPPING
+        // If backend returns { field: "email", message: "User already exists" }
         if (data.field) {
           setErrors({ [data.field]: data.message });
         } else {
-          setErrors({ general: data.message });
+          setErrors({
+            general: data.message || "Signup failed. Please try again.",
+          });
         }
       }
     } catch (err) {
+      console.error("Signup Error:", err);
       setErrors({ general: "Server error. Please check your connection." });
     } finally {
       setLoading(false);

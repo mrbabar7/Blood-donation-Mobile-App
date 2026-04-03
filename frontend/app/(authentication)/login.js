@@ -13,7 +13,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { UserRoundCheck, Mail, Lock, Eye, EyeOff } from "lucide-react-native";
 import AppText from "../../components/AppText";
 
-const apiUrl = process.env.EXPO_PUBLIC_API_URL || "http://192.168.1.xx:5000";
+const apiUrl = process.env.EXPO_PUBLIC_API_URL;
 
 export default function LogIn() {
   const router = useRouter();
@@ -30,8 +30,61 @@ export default function LogIn() {
     checkUser();
   }, []);
 
+  //   let newErrors = {};
+  //   if (!formData.email) {
+  //     newErrors.email = "Email is required";
+  //   } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
+  //     newErrors.email = "Invalid email format";
+  //   }
+
+  //   if (!formData.password) {
+  //     newErrors.password = "Password is required";
+  //   } else if (formData.password.length < 6) {
+  //     newErrors.password = "Password must be at least 6 digits";
+  //   }
+
+  //   if (Object.keys(newErrors).length > 0) {
+  //     setErrors(newErrors);
+  //     return;
+  //   }
+
+  //   setLoading(true);
+  //   setErrors({});
+
+  //   try {
+  //     const res = await fetch(`${apiUrl}/auth/login`, {
+  //       method: "POST",
+  //       headers: { "Content-Type": "application/json" },
+  //       body: JSON.stringify(formData),
+  //     });
+
+  //     const data = await res.json();
+
+  //     if (data.success) {
+  //       await AsyncStorage.setItem("loggedInUser", JSON.stringify(data.user));
+  //       router.replace("/home");
+  //     } else {
+  //       if (data.notVerified) {
+  //         Alert.alert("Verify Email", "Please verify your email first.");
+  //         router.push({
+  //           pathname: "/verifyotp",
+  //           params: { email: formData.email },
+  //         });
+  //       } else {
+  //         setErrors({ general: data.message });
+  //       }
+  //     }
+  //   } catch (err) {
+  //     setErrors({ general: "Connection failed. Check your server/IP." });
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
+
   const handleLogin = async () => {
     let newErrors = {};
+
+    // 1. FRONTEND VALIDATION (Matches Backend Joi)
     if (!formData.email) {
       newErrors.email = "Email is required";
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
@@ -41,7 +94,7 @@ export default function LogIn() {
     if (!formData.password) {
       newErrors.password = "Password is required";
     } else if (formData.password.length < 6) {
-      newErrors.password = "Password must be at least 6 digits";
+      newErrors.password = "Password must be at least 6 characters";
     }
 
     if (Object.keys(newErrors).length > 0) {
@@ -62,26 +115,38 @@ export default function LogIn() {
       const data = await res.json();
 
       if (data.success) {
-        await AsyncStorage.setItem("loggedInUser", JSON.stringify(data.user));
+        // 2. TOKEN STORAGE (Crucial for Mobile)
+        // Store the JWT token and User data
+        await SecureStore.setItemAsync("userToken", data.token);
+        await SecureStore.setItemAsync("user", JSON.stringify(data.user));
+
+        // 3. Update Global State (Optional but recommended)
+        // If you have a setUser function from useAuth()
+        // setUser(data.user);
+
         router.replace("/home");
       } else {
+        // 4. MAPPING BACKEND ERRORS TO SPECIFIC FIELDS
         if (data.notVerified) {
           Alert.alert("Verify Email", "Please verify your email first.");
           router.push({
             pathname: "/verifyotp",
             params: { email: formData.email },
           });
+        } else if (data.field) {
+          // This maps "email" or "password" errors from Joi directly to your UI
+          setErrors({ [data.field]: data.message });
         } else {
           setErrors({ general: data.message });
         }
       }
     } catch (err) {
+      console.error("Login Fetch Error:", err);
       setErrors({ general: "Connection failed. Check your server/IP." });
     } finally {
       setLoading(false);
     }
   };
-
   return (
     <SafeAreaView className="flex-1 bg-white/90">
       <ScrollView
