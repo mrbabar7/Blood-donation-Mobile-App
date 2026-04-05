@@ -20,10 +20,7 @@ import {
 import { MotiView } from "moti";
 import AppText from "../../components/AppText";
 
-const apiUrl =
-  Platform.OS === "web"
-    ? "http://localhost:5000"
-    : process.env.EXPO_PUBLIC_API_URL || "http://192.168.1.xx:5000";
+const apiUrl = process.env.EXPO_PUBLIC_API_URL;
 
 export default function ForgotPassword() {
   const router = useRouter();

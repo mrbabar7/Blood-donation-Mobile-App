@@ -18,13 +18,13 @@ export default function SplashScreen() {
   const router = useRouter();
   const progressBarWidth = width * 0.45;
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      router.replace("/home");
-    }, 5000);
+  // useEffect(() => {
+  //   const timer = setTimeout(() => {
+  //     router.replace("/home");
+  //   }, 5000);
 
-    return () => clearTimeout(timer);
-  }, []);
+  //   return () => clearTimeout(timer);
+  // }, []);
 
   return (
     <View className="flex-1 bg-white items-center justify-center px-8">

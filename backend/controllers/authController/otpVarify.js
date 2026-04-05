@@ -15,35 +15,44 @@ const verifyOTP = async (req, res) => {
         .status(404)
         .json({ success: false, message: "User not found" });
     }
+
     if (user.otp !== otp) {
       return res.status(400).json({ success: false, message: "Invalid OTP" });
     }
+
     if (new Date() > user.otpExpires) {
       return res.status(400).json({ success: false, message: "OTP Expired" });
     }
 
+    // Update User Status
     user.isVerified = true;
     user.otp = undefined;
     user.otpExpires = undefined;
 
+    // Generate Token
     const jwtToken = jwt.sign(
       { email: user.email, id: user._id, _id: user._id },
       process.env.JWT_SECRET || "secret123",
-      { expiresIn: "12h" },
+      { expiresIn: "24h" }, // Consistent with login.js
     );
 
+    // Optional: Save token if tracking active sessions
+    user.token = jwtToken;
+    await user.save();
+
+    // 1. Keep cookie for background compatibility
     res.cookie("token", jwtToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite: "Lax",
+      sameSite: "none",
       maxAge: 24 * 60 * 60 * 1000,
     });
 
-    await user.save();
-
+    // 2. Return JSON with the token for Mobile SecureStore
     res.status(200).json({
       success: true,
       message: "Account verified successfully!",
+      token: jwtToken, // <--- CRITICAL FOR EXPO
       user: {
         userId: user._id,
         name: user.name,
