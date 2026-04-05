@@ -12,7 +12,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { UserRoundCheck, Mail, Lock, Eye, EyeOff } from "lucide-react-native";
 import AppText from "../../components/AppText";
-
+import * as SecureStore from "expo-secure-store";
 const apiUrl = process.env.EXPO_PUBLIC_API_URL;
 
 export default function LogIn() {
@@ -29,58 +29,6 @@ export default function LogIn() {
     };
     checkUser();
   }, []);
-
-  //   let newErrors = {};
-  //   if (!formData.email) {
-  //     newErrors.email = "Email is required";
-  //   } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-  //     newErrors.email = "Invalid email format";
-  //   }
-
-  //   if (!formData.password) {
-  //     newErrors.password = "Password is required";
-  //   } else if (formData.password.length < 6) {
-  //     newErrors.password = "Password must be at least 6 digits";
-  //   }
-
-  //   if (Object.keys(newErrors).length > 0) {
-  //     setErrors(newErrors);
-  //     return;
-  //   }
-
-  //   setLoading(true);
-  //   setErrors({});
-
-  //   try {
-  //     const res = await fetch(`${apiUrl}/auth/login`, {
-  //       method: "POST",
-  //       headers: { "Content-Type": "application/json" },
-  //       body: JSON.stringify(formData),
-  //     });
-
-  //     const data = await res.json();
-
-  //     if (data.success) {
-  //       await AsyncStorage.setItem("loggedInUser", JSON.stringify(data.user));
-  //       router.replace("/home");
-  //     } else {
-  //       if (data.notVerified) {
-  //         Alert.alert("Verify Email", "Please verify your email first.");
-  //         router.push({
-  //           pathname: "/verifyotp",
-  //           params: { email: formData.email },
-  //         });
-  //       } else {
-  //         setErrors({ general: data.message });
-  //       }
-  //     }
-  //   } catch (err) {
-  //     setErrors({ general: "Connection failed. Check your server/IP." });
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // };
-
   const handleLogin = async () => {
     let newErrors = {};
 
@@ -113,7 +61,7 @@ export default function LogIn() {
       });
 
       const data = await res.json();
-
+      console.log("Login Response:", data);
       if (data.success) {
         // 2. TOKEN STORAGE (Crucial for Mobile)
         // Store the JWT token and User data
@@ -124,7 +72,7 @@ export default function LogIn() {
         // If you have a setUser function from useAuth()
         // setUser(data.user);
 
-        router.replace("/home");
+        router.replace("/dashboard");
       } else {
         // 4. MAPPING BACKEND ERRORS TO SPECIFIC FIELDS
         if (data.notVerified) {

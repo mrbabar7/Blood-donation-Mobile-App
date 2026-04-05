@@ -71,7 +71,7 @@ export default function SignUp() {
       });
 
       const data = await res.json();
-
+      console.log("signup response is: ", data);
       if (data.success) {
         // Successful signup - redirect to OTP verification
         Alert.alert(

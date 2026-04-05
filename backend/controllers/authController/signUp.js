@@ -8,7 +8,6 @@ const {
 const signUp = async (req, res) => {
   try {
     const { name, email, password } = req.body;
-
     // 1. Validation Check
     const existingUser = await userModel.findOne({ email });
     if (existingUser) {

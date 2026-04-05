@@ -101,7 +101,7 @@ export default function OTPVerify() {
         await SecureStore.setItemAsync("user", JSON.stringify(data.user));
 
         Alert.alert("Verified!", "Your account is now active.");
-        router.replace("/home"); // Direct to Home
+        router.replace("/login"); // Direct to Home
       } else {
         setError(data.message || "Invalid code. Please try again.");
         // Clear OTP boxes on failure
