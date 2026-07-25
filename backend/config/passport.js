@@ -13,7 +13,7 @@ passport.use(
       callbackURL:
         process.env.NODE_ENV === "production"
           ? "https://pakbloodapibackend.vercel.app/api/auth/google/callback"
-          : "/api/auth/google/callback",
+          : `${process.env.BACKEND_SERVER || "http://localhost:5000"}/api/auth/google/callback`,
       proxy: true,
     },
     async (accessToken, refreshToken, profile, done) => {
