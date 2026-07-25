@@ -80,7 +80,7 @@ export default function SignUp() {
         );
 
         router.push({
-          pathname: "/verifyotp",
+          pathname: "/(authentication)/verifyotp",
           // Pass the email from the backend response or formData
           params: { email: data.user?.email || formData.email },
         });
@@ -248,7 +248,9 @@ export default function SignUp() {
 
         <View className="flex-row justify-center pb-10">
           <AppText>Already have an account? </AppText>
-          <TouchableOpacity onPress={() => router.push("/login")}>
+          <TouchableOpacity
+            onPress={() => router.push("/(authentication)/login")}
+          >
             <AppText className="text-red-600 font-bold underline">
               Log In
             </AppText>

@@ -1,143 +1,277 @@
-import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, Image, Platform, Alert } from 'react-native';
-import { Clock, CheckCircle, XCircle, Droplet, MapPin, Star, CheckCheck, Bell, Power } from 'lucide-react-native';
-import { useRouter, usePathname } from 'expo-router';
+import React, { useState, useEffect } from "react";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  ScrollView,
+  ActivityIndicator,
+  Alert,
+  RefreshControl,
+} from "react-native";
+import {
+  Clock,
+  CheckCircle,
+  XCircle,
+  Droplet,
+  MapPin,
+  Trash2,
+  ChevronRight,
+  History,
+  Info,
+} from "lucide-react-native";
+import { useRouter } from "expo-router";
+import { MotiView, AnimatePresence } from "moti";
+
+// Replace with your actual config/env
+const apiUrl = process.env.EXPO_PUBLIC_API_URL;
 
 export default function RequestScreen() {
-  const [activeTab, setActiveTab] = useState('Pending');
+  const [requests, setRequests] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [activeTab, setActiveTab] = useState("pending");
   const router = useRouter();
 
-  // --- DUMMY DATA ---
-  const requests = [
-    { id: '1', group: 'A+', units: '2', status: 'Pending', date: '2026-03-25', hospital: 'City Hospital', donor: '' },
-    { id: '2', group: 'O-', units: '1', status: 'Accepted', date: '2026-03-22', hospital: 'Red Crescent', donor: 'Bilal Sikandar' },
-    { id: '3', group: 'B+', units: '3', status: 'Rejected', date: '2026-03-20', hospital: 'Mayo Hospital', donor: '' },
-    { id: '4', group: 'AB+', units: '1', status: 'Completed', date: '2026-03-15', hospital: 'General Hospital', donor: 'Abu Bakar Khan' },
+  const tabs = [
+    { id: "pending", label: "Pending" },
+    { id: "accepted", label: "Accepted" },
+    { id: "rejected", label: "Rejected" },
+    { id: "completed", label: "History" },
   ];
 
-  const filteredRequests = requests.filter(req => req.status === activeTab);
-  const tabs = ['Pending', 'Accepted', 'Rejected', 'Completed'];
+  // --- LOGIC FROM WEB APP ---
 
-  // --- LOGOUT LOGIC ---
-  const handleLogout = () => {
-    Alert.alert("Logout", "Are you sure you want to logout?", [
+  const fetchRequests = async () => {
+    try {
+      const response = await fetch(`${apiUrl}/api/seeker/my-requests`, {
+        credentials: "include", // Ensure your mobile client handles cookies or use Bearer tokens
+      });
+
+      const data = await response.json();
+      setRequests(data);
+    } catch (err) {
+      Alert.alert("Error", "Failed to load requests");
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchRequests();
+  }, []);
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    fetchRequests();
+  };
+
+  const deleteSingleRequest = (requestId) => {
+    Alert.alert(
+      "Remove Record",
+      "Are you sure you want to delete this request?",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Remove",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              const response = await fetch(
+                `${apiUrl}/api/seeker/delete-request/${requestId}`,
+                {
+                  method: "DELETE",
+                  credentials: "include",
+                },
+              );
+              if (response.ok) {
+                setRequests((prev) => prev.filter((r) => r._id !== requestId));
+              }
+            } catch (err) {
+              Alert.alert("Error", "Could not delete");
+            }
+          },
+        },
+      ],
+    );
+  };
+
+  const clearCategory = (status) => {
+    Alert.alert("Clear Category", `Delete all ${status} requests?`, [
       { text: "Cancel", style: "cancel" },
-      { text: "Yes", onPress: () => router.replace("/login") }
+      {
+        text: "Clear All",
+        style: "destructive",
+        onPress: async () => {
+          try {
+            await fetch(`${apiUrl}/api/seeker/clear-history/${status}`, {
+              method: "DELETE",
+              credentials: "include",
+            });
+            setRequests((prev) => prev.filter((r) => r.status !== status));
+          } catch (err) {
+            Alert.alert("Error", "Failed to clear category");
+          }
+        },
+      },
     ]);
+  };
+
+  // const filteredRequests = requests.filter((req) => req.status === activeTab);
+  const filteredRequests =
+    requests.length > 1
+      ? requests.filter((req) => req.status === activeTab)
+      : 0;
+  // --- UI COMPONENTS ---
+
+  const StatusBadge = ({ status }) => {
+    const configs = {
+      pending: { color: "#f59e0b", icon: Clock, label: "Pending" },
+      accepted: { color: "#10b981", icon: CheckCircle, label: "Accepted" },
+      rejected: { color: "#ef4444", icon: XCircle, label: "Rejected" },
+      completed: { color: "#3b82f6", icon: History, label: "Completed" },
+    };
+    const config = configs[status];
+    const Icon = config.icon;
+
+    return (
+      <View className="flex-row items-center">
+        <Icon size={14} color={config.color} />
+        <Text className="ml-1 font-bold text-[10px] uppercase text-gray-400">
+          {config.label}
+        </Text>
+      </View>
+    );
   };
 
   return (
     <View className="flex-1 bg-gray-50">
-      
-      {/* 1. MAIN HEADER (Fixed Top) */}
-      <View 
-        className="bg-red-800 px-5 flex-row items-center justify-between shadow-lg"
-        style={{ height: Platform.OS === 'ios' ? 110 : 90, paddingTop: Platform.OS === 'ios' ? 40 : 25 }}
-      >
-        <View className="flex-row items-center">
-          <Image
-            source={{ uri: "https://res.cloudinary.com/dzghpapmn/image/upload/v1772727345/bg-remove-logo_skwuuz.png" }}
-            className="w-14 h-14"
-            resizeMode="contain"
-          />
-          <View className="ml-3">
-            <Text className="text-white text-lg font-black uppercase">Requests</Text>
-            <View className="h-[2px] w-8 bg-yellow-400 rounded-full" />
-          </View>
-        </View>
-
-        <View className="flex-row items-center">
-          <TouchableOpacity className="relative p-2 bg-white/10 rounded-full mr-3">
-            <Bell size={22} color="white" />
-          </TouchableOpacity>
-          
-          <TouchableOpacity onPress={handleLogout} className="p-2 bg-white/10 rounded-full">
-            <Power size={18} color="white" />
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      {/* 2. 4 TABS (Directly under Header) */}
-      <View className="bg-white px-2 py-3 shadow-sm border-b border-gray-100">
+      {/* TABS SECTION */}
+      <View className="bg-white px-2 py-4 shadow-sm border-b border-gray-100">
         <View className="flex-row justify-between items-center">
           {tabs.map((tab) => (
             <TouchableOpacity
-              key={tab}
-              onPress={() => setActiveTab(tab)}
-              className={`flex-1 mx-1 py-2.5 rounded-xl border items-center ${
-                activeTab === tab ? 'bg-red-800 border-red-800' : 'bg-gray-50 border-gray-200'
+              key={tab.id}
+              onPress={() => setActiveTab(tab.id)}
+              className={`flex-1 mx-1 py-3 rounded-2xl items-center ${
+                activeTab === tab.id ? "bg-red-600" : "bg-gray-50"
               }`}
             >
-              <Text 
-                className={`font-bold ${activeTab === tab ? 'text-white' : 'text-gray-500'}`} 
-                style={{ fontSize: 10 }}
+              <Text
+                className={`font-black uppercase tracking-tighter ${
+                  activeTab === tab.id ? "text-white" : "text-gray-400"
+                }`}
+                style={{ fontSize: 9 }}
               >
-                {tab}
+                {tab.label}
               </Text>
             </TouchableOpacity>
           ))}
         </View>
       </View>
 
-      {/* 3. REQUEST LIST (Scrollable) */}
-      <ScrollView className="flex-1 px-4 pt-4" showsVerticalScrollIndicator={false}>
-        {filteredRequests.length > 0 ? (
-          filteredRequests.map((item) => (
-            <View key={item.id} className="bg-white p-5 rounded-[25px] mb-4 shadow-sm border-l-4 border-red-800">
-              
-              <View className="flex-row justify-between items-center mb-3">
-                <View className="flex-row items-center bg-red-50 px-3 py-1 rounded-lg">
-                  <Droplet size={18} color="#991b1b" />
-                  <Text className="text-red-800 font-black ml-1 text-lg">{item.group}</Text>
-                </View>
-                
-                <View className="flex-row items-center">
-                  {item.status === 'Completed' ? <CheckCheck size={18} color="#1e40af" /> : 
-                   item.status === 'Accepted' ? <CheckCircle size={16} color="#10b981" /> :
-                   item.status === 'Rejected' ? <XCircle size={16} color="#ef4444" /> : 
-                   <Clock size={16} color="#f59e0b" />}
-                  <Text className="ml-1 font-bold text-[10px] uppercase text-gray-400">{item.status}</Text>
-                </View>
-              </View>
+      {/* CLEAR BUTTON (Only for History/Rejected) */}
+      {(activeTab === "completed" || activeTab === "rejected") &&
+        filteredRequests.length > 0 && (
+          <TouchableOpacity
+            onPress={() => clearCategory(activeTab)}
+            className="mx-4 mt-4 flex-row items-center justify-center bg-red-50 py-2 rounded-xl border border-red-100"
+          >
+            <Trash2 size={12} color="#991b1b" />
+            <Text className="text-red-800 ml-2 font-black text-[10px] uppercase">
+              Clear All {activeTab}
+            </Text>
+          </TouchableOpacity>
+        )}
 
-              <View className="space-y-2 mb-3">
-                <View className="flex-row items-center">
-                  <MapPin size={12} color="#6b7280" />
-                  <Text className="text-gray-700 ml-2 font-semibold text-[13px]">{item.hospital}</Text>
+      {/* MAIN LIST */}
+      <ScrollView
+        className="flex-1 px-4 pt-4"
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
+      >
+        {loading ? (
+          <View className="py-20 items-center">
+            <ActivityIndicator color="#ef4444" size="large" />
+            <Text className="text-gray-400 font-bold mt-4">
+              Syncing with Server...
+            </Text>
+          </View>
+        ) : filteredRequests.length > 0 ? (
+          <AnimatePresence>
+            {filteredRequests.map((item) => (
+              <MotiView
+                key={item._id}
+                from={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.9 }}
+                className="bg-white p-5 rounded-[2.5rem] mb-4 shadow-sm border border-gray-100"
+              >
+                <View className="flex-row justify-between items-center mb-4">
+                  <View className="flex-row items-center bg-red-50 px-3 py-1 rounded-xl">
+                    <Droplet size={16} color="#dc2626" fill="#dc2626" />
+                    <Text className="text-red-700 font-black ml-2 text-lg">
+                      {item.donorId?.bloodType || "N/A"}
+                    </Text>
+                  </View>
+                  <StatusBadge status={item.status} />
                 </View>
-                {item.donor !== '' && (
-                  <View className="mt-2 bg-gray-50 p-2 rounded-lg flex-row items-center">
-                    <Text className="text-[10px] text-gray-500 font-bold uppercase">Donor: </Text>
-                    <Text className="text-[10px] text-red-800 font-bold italic">{item.donor}</Text>
-                  </View>
-                )}
-              </View>
 
-              <View className="mt-2 pt-3 border-t border-gray-50 flex-row justify-between items-center">
-                <Text className="text-gray-400 text-[9px] font-bold tracking-tighter">ID: #00{item.id}</Text>
-                
-                {item.status === 'Completed' ? (
-                  <TouchableOpacity className="flex-row items-center bg-yellow-400 px-3 py-2 rounded-xl shadow-sm">
-                    <Star size={12} color="#854d0e" fill="#854d0e" />
-                    <Text className="text-yellow-900 ml-1 font-black text-[10px]">Rate Donor</Text>
-                  </TouchableOpacity>
-                ) : (
-                  <View className="bg-red-50 px-3 py-1 rounded-full border border-red-100">
-                    <Text className="text-red-800 text-[10px] font-bold">{item.units} Units</Text>
+                <View className="mb-4">
+                  <Text className="text-gray-900 font-black text-xl mb-1">
+                    {item.donorId?.fullName || "Unknown Donor"}
+                  </Text>
+                  <View className="flex-row items-center">
+                    <MapPin size={14} color="#94a3b8" />
+                    <Text className="text-gray-400 ml-1 font-bold text-xs">
+                      {item.donorId?.district || "Location not provided"}
+                    </Text>
                   </View>
-                )}
-              </View>
-            </View>
-          ))
+                </View>
+
+                <View className="flex-row gap-2 mt-2 pt-4 border-t border-gray-50">
+                  {activeTab === "accepted" ? (
+                    <TouchableOpacity
+                      onPress={() =>
+                        router.push(
+                          `/dashboard/donor-details/${item.donorId._id}/${item._id}`,
+                        )
+                      }
+                      className="flex-1 bg-red-600 h-12 rounded-2xl flex-row items-center justify-center shadow-lg shadow-red-200"
+                    >
+                      <Text className="text-white font-black text-[11px] uppercase tracking-widest">
+                        Contact Donor
+                      </Text>
+                      <ChevronRight size={16} color="white" />
+                    </TouchableOpacity>
+                  ) : (
+                    <TouchableOpacity
+                      onPress={() => deleteSingleRequest(item._id)}
+                      className="flex-1 bg-gray-50 h-12 rounded-2xl flex-row items-center justify-center border border-gray-100"
+                    >
+                      <Trash2 size={14} color="#94a3b8" />
+                      <Text className="text-gray-400 ml-2 font-black text-[11px] uppercase tracking-widest">
+                        {activeTab === "pending" ? "Cancel Request" : "Remove"}
+                      </Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
+              </MotiView>
+            ))}
+          </AnimatePresence>
         ) : (
           <View className="items-center justify-center py-20">
-            <View className="bg-gray-100 p-6 rounded-full mb-4 opacity-50">
-              <Droplet size={40} color="#d1d5db" />
+            <View className="bg-white p-8 rounded-[3rem] shadow-sm border border-gray-50 items-center">
+              <Droplet size={48} color="#e2e8f0" />
+              <Text className="text-gray-300 font-black mt-4 uppercase tracking-widest text-center">
+                No {activeTab} records found
+              </Text>
             </View>
-            <Text className="text-gray-300 font-black italic uppercase">No {activeTab} Requests</Text>
           </View>
         )}
-        <View className="h-24" />
+        <View className="h-20" />
       </ScrollView>
     </View>
   );

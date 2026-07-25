@@ -1,126 +1,246 @@
-import React, { useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Platform, Image } from 'react-native';
-import { Droplet, Calendar, MapPin, ArrowUpRight, ArrowDownLeft, Clock, Bell, Power } from 'lucide-react-native';
+import React, { useState, useEffect } from "react";
+import {
+  View,
+  Text,
+  ScrollView,
+  TouchableOpacity,
+  ActivityIndicator,
+  Alert,
+  RefreshControl,
+} from "react-native";
+import {
+  Droplet,
+  Calendar,
+  MapPin,
+  ArrowUpRight,
+  ArrowDownLeft,
+  Trash2,
+  CheckCircle2,
+  Clock,
+  XCircle,
+  History,
+} from "lucide-react-native";
+import { MotiView, AnimatePresence } from "moti";
+
+// Replace with your actual config/env
+const apiUrl = process.env.EXPO_PUBLIC_API_URL;
 
 export default function HistoryScreen() {
-  const [activeTab, setActiveTab] = useState('donor'); // 'donor' or 'seeker'
+  const [activeTab, setActiveTab] = useState("donor"); // 'donor' or 'seeker'
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [historyData, setHistoryData] = useState({ donor: [], seeker: [] });
 
-  // Fake Data - Aap isse backend API se replace karenge
-  const donorHistory = [
-    { id: '1', date: '12 March 2026', location: 'DHQ Hospital, Okara', units: '1 Unit', status: 'Completed' },
-    { id: '2', date: '05 Jan 2026', location: 'Indus Hospital, Lahore', units: '1 Unit', status: 'Completed' },
-  ];
+  // --- LOGIC FROM WEB APP ---
 
-  const seekerHistory = [
-    { id: '1', date: '20 Feb 2026', location: 'City Clinic', units: '2 Units', status: 'Fulfilled', urgent: true },
-    { id: '2', date: '01 Feb 2026', location: 'General Hospital', units: '1 Unit', status: 'Pending', urgent: false },
-  ];
+  const fetchHistory = async () => {
+    try {
+      const response = await fetch(`${apiUrl}/api/activity-history`, {
+        credentials: "include",
+      });
+      const data = await response.json();
+      if (response.ok) setHistoryData(data);
+    } catch (err) {
+      console.error("Failed to fetch history");
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchHistory();
+  }, []);
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    fetchHistory();
+  };
+
+  const handleDelete = (type, id) => {
+    Alert.alert(
+      "Delete Record",
+      "This will permanently remove this activity. Continue?",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              const response = await fetch(
+                `${apiUrl}/api/delete-request/${id}`,
+                {
+                  method: "DELETE",
+                  credentials: "include",
+                },
+              );
+              if (response.ok) {
+                setHistoryData((prev) => ({
+                  ...prev,
+                  [type]: prev[type].filter((item) => item.id !== id),
+                }));
+              }
+            } catch (err) {
+              Alert.alert("Error", "Delete failed");
+            }
+          },
+        },
+      ],
+    );
+  };
+
+  // --- UI HELPERS ---
+
+  const StatusBadge = ({ status }) => {
+    const config = {
+      Accepted: { color: "#059669", bg: "#ecfdf5", icon: CheckCircle2 },
+      Completed: { color: "#059669", bg: "#ecfdf5", icon: CheckCircle2 },
+      Pending: { color: "#d97706", bg: "#fffbeb", icon: Clock },
+      Rejected: { color: "#dc2626", bg: "#fef2f2", icon: XCircle },
+    };
+    const style = config[status] || config.Pending;
+    const Icon = style.icon;
+
+    return (
+      <View
+        style={{ backgroundColor: style.bg }}
+        className="flex-row items-center px-3 py-1 rounded-full border border-black/5"
+      >
+        <Icon size={10} color={style.color} />
+        <Text
+          style={{ color: style.color }}
+          className="ml-1 text-[9px] font-black uppercase"
+        >
+          {status}
+        </Text>
+      </View>
+    );
+  };
 
   return (
     <View className="flex-1 bg-gray-50">
-      
-      {/* --- HEADER --- */}
-      <View 
-        className="bg-red-800 px-5 flex-row items-center justify-between shadow-lg"
-        style={{ height: Platform.OS === 'ios' ? 110 : 90, paddingTop: Platform.OS === 'ios' ? 40 : 25 }}
-      >
-        <View className="flex-row items-center">
-          <Image source={{ uri: "https://res.cloudinary.com/dzghpapmn/image/upload/v1772727345/bg-remove-logo_skwuuz.png" }} className="w-12 h-12" resizeMode="contain" />
-          <Text className="text-white text-lg font-black uppercase ml-2">Activity History</Text>
-        </View>
-        <TouchableOpacity className="p-2 bg-white/10 rounded-full">
-          <Clock size={20} color="white" />
-        </TouchableOpacity>
-      </View>
-
-      {/* --- TAB SWITCHER --- */}
+      {/* --- TAB SWITCHER (Teammate's Style) --- */}
       <View className="flex-row bg-white mx-5 mt-6 rounded-2xl p-1 shadow-sm border border-gray-100">
-        <TouchableOpacity 
-          onPress={() => setActiveTab('donor')}
-          className={`flex-1 flex-row items-center justify-center py-3 rounded-xl ${activeTab === 'donor' ? 'bg-red-800' : 'bg-transparent'}`}
+        <TouchableOpacity
+          onPress={() => setActiveTab("donor")}
+          className={`flex-1 flex-row items-center justify-center py-3 rounded-xl ${
+            activeTab === "donor" ? "bg-red-800" : "bg-transparent"
+          }`}
         >
-          <ArrowUpRight size={16} color={activeTab === 'donor' ? 'white' : '#9ca3af'} />
-          <Text className={`ml-2 font-bold ${activeTab === 'donor' ? 'white' : 'text-gray-400'}`}>Donated</Text>
+          <ArrowUpRight
+            size={16}
+            color={activeTab === "donor" ? "white" : "#9ca3af"}
+          />
+          <Text
+            className={`ml-2 font-bold ${activeTab === "donor" ? "text-white" : "text-gray-400"}`}
+          >
+            Donated
+          </Text>
         </TouchableOpacity>
 
-        <TouchableOpacity 
-          onPress={() => setActiveTab('seeker')}
-          className={`flex-1 flex-row items-center justify-center py-3 rounded-xl ${activeTab === 'seeker' ? 'bg-red-800' : 'bg-transparent'}`}
+        <TouchableOpacity
+          onPress={() => setActiveTab("seeker")}
+          className={`flex-1 flex-row items-center justify-center py-3 rounded-xl ${
+            activeTab === "seeker" ? "bg-red-800" : "bg-transparent"
+          }`}
         >
-          <ArrowDownLeft size={16} color={activeTab === 'seeker' ? 'white' : '#9ca3af'} />
-          <Text className={`ml-2 font-bold ${activeTab === 'seeker' ? 'white' : 'text-gray-400'}`}>Requested</Text>
+          <ArrowDownLeft
+            size={16}
+            color={activeTab === "seeker" ? "white" : "#9ca3af"}
+          />
+          <Text
+            className={`ml-2 font-bold ${activeTab === "seeker" ? "text-white" : "text-gray-400"}`}
+          >
+            Requested
+          </Text>
         </TouchableOpacity>
       </View>
 
-      <ScrollView className="flex-1 px-5 pt-4" showsVerticalScrollIndicator={false}>
-        
-        {activeTab === 'donor' ? (
-          /* --- DONOR LIST --- */
-          donorHistory.map((item) => (
-            <View key={item.id} className="bg-white p-4 rounded-[25px] mb-4 border border-gray-100 shadow-sm">
-              <View className="flex-row justify-between items-center mb-3">
-                <View className="bg-green-100 px-3 py-1 rounded-full">
-                  <Text className="text-green-700 text-[10px] font-bold uppercase">{item.status}</Text>
-                </View>
-                <Text className="text-gray-400 text-[11px]">{item.date}</Text>
-              </View>
-              
-              <View className="flex-row items-center">
-                <View className="bg-red-50 p-3 rounded-2xl">
-                  <Droplet size={20} color="#991b1b" />
-                </View>
-                <View className="ml-4 flex-1">
-                  <Text className="text-gray-800 font-bold text-base">{item.units} Donated</Text>
-                  <View className="flex-row items-center mt-1">
-                    <MapPin size={12} color="#9ca3af" />
-                    <Text className="text-gray-400 text-xs ml-1">{item.location}</Text>
+      {/* --- CONTENT AREA --- */}
+      <ScrollView
+        className="flex-1 px-5 pt-4"
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
+      >
+        {loading ? (
+          <View className="py-20 items-center">
+            <ActivityIndicator color="#991b1b" size="large" />
+            <Text className="text-gray-400 font-bold mt-4 uppercase text-[10px] tracking-widest">
+              Loading History...
+            </Text>
+          </View>
+        ) : historyData[activeTab].length > 0 ? (
+          <AnimatePresence>
+            {historyData[activeTab].map((item) => (
+              <MotiView
+                key={item.id}
+                from={{ opacity: 0, translateY: 10 }}
+                animate={{ opacity: 1, translateY: 0 }}
+                exit={{ opacity: 0, scale: 0.9 }}
+                className="bg-white p-5 rounded-[30px] mb-4 border border-gray-100 shadow-sm"
+              >
+                {/* Header Row: Date & Status */}
+                <View className="flex-row justify-between items-center mb-4">
+                  <View className="flex-row items-center">
+                    <Calendar size={12} color="#94a3b8" />
+                    <Text className="text-gray-400 text-[11px] font-bold ml-1">
+                      {item.date}
+                    </Text>
                   </View>
+                  <StatusBadge status={item.status} />
                 </View>
-              </View>
-            </View>
-          ))
-        ) : (
-          /* --- SEEKER LIST --- */
-          seekerHistory.map((item) => (
-            <View key={item.id} className="bg-white p-4 rounded-[25px] mb-4 border border-gray-100 shadow-sm">
-              <View className="flex-row justify-between items-center mb-3">
-                <View className={`${item.status === 'Fulfilled' ? 'bg-blue-100' : 'bg-yellow-100'} px-3 py-1 rounded-full`}>
-                  <Text className={`${item.status === 'Fulfilled' ? 'text-blue-700' : 'text-yellow-700'} text-[10px] font-bold uppercase`}>
-                    {item.status}
-                  </Text>
-                </View>
-                {item.urgent && (
-                  <View className="bg-red-100 px-2 py-1 rounded-md">
-                    <Text className="text-red-600 text-[8px] font-black italic">URGENT</Text>
-                  </View>
-                )}
-              </View>
-              
-              <View className="flex-row items-center">
-                <View className="bg-blue-50 p-3 rounded-2xl">
-                  <Calendar size={20} color="#1d4ed8" />
-                </View>
-                <View className="ml-4 flex-1">
-                  <Text className="text-gray-800 font-bold text-base">{item.units} Requested</Text>
-                  <View className="flex-row items-center mt-1">
-                    <MapPin size={12} color="#9ca3af" />
-                    <Text className="text-gray-400 text-xs ml-1">{item.location}</Text>
-                  </View>
-                </View>
-                <Text className="text-gray-300 text-[10px]">{item.date}</Text>
-              </View>
-            </View>
-          ))
-        )}
 
-        {/* Empty State Logic */}
-        {((activeTab === 'donor' && donorHistory.length === 0) || (activeTab === 'seeker' && seekerHistory.length === 0)) && (
-          <View className="items-center mt-20">
-            <Text className="text-gray-300 font-bold italic">No history found yet.</Text>
+                {/* Main Content Row */}
+                <View className="flex-row items-center">
+                  <View
+                    className={`p-4 rounded-2xl ${activeTab === "donor" ? "bg-red-50" : "bg-blue-50"}`}
+                  >
+                    {activeTab === "donor" ? (
+                      <Droplet size={24} color="#991b1b" fill="#991b1b" />
+                    ) : (
+                      <History size={24} color="#1d4ed8" />
+                    )}
+                  </View>
+
+                  <View className="ml-4 flex-1">
+                    <Text className="text-gray-400 text-[10px] font-black uppercase tracking-tighter">
+                      {activeTab === "donor" ? "Requested By" : "Requested To"}
+                    </Text>
+                    <Text className="text-gray-900 font-black text-lg leading-tight">
+                      {item.partner}
+                    </Text>
+                    <View className="flex-row items-center mt-1">
+                      <Text className="text-red-600 font-black text-xs">
+                        Group {item.bloodGroup}
+                      </Text>
+                    </View>
+                  </View>
+
+                  <TouchableOpacity
+                    onPress={() => handleDelete(activeTab, item.id)}
+                    className="p-2 bg-gray-50 rounded-xl"
+                  >
+                    <Trash2 size={18} color="#cbd5e1" />
+                  </TouchableOpacity>
+                </View>
+              </MotiView>
+            ))}
+          </AnimatePresence>
+        ) : (
+          /* Empty State */
+          <View className="items-center justify-center py-20">
+            <View className="bg-white p-10 rounded-[40px] shadow-sm border border-gray-50 items-center">
+              <History size={40} color="#e2e8f0" />
+              <Text className="text-gray-300 font-black mt-4 uppercase tracking-[0.1em] text-center">
+                No {activeTab} history yet
+              </Text>
+            </View>
           </View>
         )}
-
-        <View className="h-20" />
+        <View className="h-24" />
       </ScrollView>
     </View>
   );

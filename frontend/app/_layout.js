@@ -1,42 +1,63 @@
 import "../global.css";
-import { useEffect } from "react";
-import { Stack, usePathname, useRouter } from "expo-router";
+import React, { useEffect, useState } from "react";
+import { Stack, useRouter, useSegments } from "expo-router";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { View } from "react-native";
-import Header from "../components/Header";
+import * as SecureStore from "expo-secure-store";
+import SelectionModal from "../components/SelectionModal";
 import { AuthProvider, useAuth } from "../context/AuthContext";
-import SplashScreen from "./index"; // Your animated splash component
-function RootLayoutNav() {
-  const { isLoading, user } = useAuth();
-  const pathname = usePathname();
-  const router = useRouter(); // Initialize router
+import { LocationProvider, useLocation } from "../context/LocationContext";
 
-  // --- THE TRAFFIC COP LOGIC ---
+function RootLayoutNav() {
+  const { isLoading: authLoading } = useAuth();
+  const { modalType, setModalType } = useLocation();
+  const router = useRouter();
+  const segments = useSegments();
+  const [loadingWelcome, setLoadingWelcome] = useState(true);
+  const [hasSeenWelcome, setHasSeenWelcome] = useState(false);
+
+  // Check SecureStore on app launch
   useEffect(() => {
-    if (!isLoading) {
-      // If we are at the root (splash) and auth is finished
-      if (pathname === "/" || pathname === "/index") {
-        if (user) {
-          router.replace("/dashboard");
-        } else {
-          router.replace("/home");
+    async function checkWelcomeStatus() {
+      try {
+        const value = await SecureStore.getItemAsync("hasSeenWelcome");
+        if (value === "true") {
+          setHasSeenWelcome(true);
         }
+      } catch (e) {
+        console.error("Failed to fetch secure store status", e);
+      } finally {
+        setLoadingWelcome(false);
       }
     }
-  }, [isLoading, user, pathname]);
+    checkWelcomeStatus();
+  }, []);
 
-  if (isLoading) {
-    return <SplashScreen />;
+  // Handle routing based on Welcome status
+  useEffect(() => {
+    if (authLoading || loadingWelcome) return;
+
+    const inWelcomeScreen = segments[0] === "welcome";
+
+    if (!hasSeenWelcome) {
+      if (!inWelcomeScreen) {
+        router.replace("/welcome");
+      }
+    } else {
+      if (inWelcomeScreen || segments.length === 0) {
+        router.replace("/(dashboard)");
+      }
+    }
+  }, [hasSeenWelcome, authLoading, loadingWelcome, segments]);
+
+  // Keep the native splash screen active while checks complete
+  if (authLoading || loadingWelcome) {
+    return null;
   }
 
-  const hiddenRoutes = ["/", "/index", "/dashboard"];
-  const hideHeader = hiddenRoutes.includes(pathname);
-
   return (
-    <SafeAreaProvider>
-      <View style={{ flex: 1, backgroundColor: "white" }}>
-        {!hideHeader && <Header />}
-
+    <SafeAreaProvider style={{ flex: 1, backgroundColor: "white" }}>
+      <View style={{ flex: 1 }}>
         <Stack
           screenOptions={{
             headerShown: false,
@@ -44,29 +65,16 @@ function RootLayoutNav() {
             contentStyle: { backgroundColor: "white" },
           }}
         >
-          {/* Keep index here so the router has a 
-             valid target while the redirect fires 
-          */}
-          <Stack.Screen name="index" />
-
-          {!user ? (
-            <>
-              <Stack.Screen name="home" />
-              <Stack.Screen name="login" />
-              <Stack.Screen name="signup" />
-              <Stack.Screen name="verifyotp" />
-              <Stack.Screen name="donor-results" />
-              <Stack.Screen name="forgotpassword" />
-              <Stack.Screen name="about" />
-              <Stack.Screen name="emergency" />
-              <Stack.Screen name="contact" />
-            </>
-          ) : (
-            <>
-              <Stack.Screen name="dashboard" />
-            </>
-          )}
+          <Stack.Screen name="welcome" options={{ gestureEnabled: false }} />
+          <Stack.Screen name="(dashboard)" />
+          <Stack.Screen name="(authentication)" />
         </Stack>
+
+        <SelectionModal
+          visible={modalType !== null}
+          type={modalType}
+          onClose={() => setModalType(null)}
+        />
       </View>
     </SafeAreaProvider>
   );
@@ -75,7 +83,9 @@ function RootLayoutNav() {
 export default function Layout() {
   return (
     <AuthProvider>
-      <RootLayoutNav />
+      <LocationProvider>
+        <RootLayoutNav />
+      </LocationProvider>
     </AuthProvider>
   );
 }

@@ -1,97 +1,8 @@
-// import { Drawer } from "expo-router/drawer";
-// import SideBar from "./_Dashboard-Component/SideBar";
-// import {
-//   Home,
-//   ClipboardList,
-//   User,
-//   History,
-//   Settings,
-//   Send,
-// } from "lucide-react-native";
-
-// export default function DashboardLayout() {
-//   return (
-//     <Drawer
-//       drawerContent={(props) => <SideBar {...props} />}
-//       screenOptions={{
-//         headerShown: false,
-//         drawerStyle: {
-//           backgroundColor: "#991b1b",
-//           width: 280,
-//         },
-//         drawerActiveBackgroundColor: "rgba(255, 255, 255, 0.2)",
-//         drawerActiveTintColor: "#ffffff",
-//         drawerInactiveTintColor: "#fca5a5",
-//         drawerLabelStyle: {
-//           fontSize: 16,
-//           fontWeight: "600",
-//           marginLeft: -10,
-//         },
-//       }}
-//     >
-//       {/* 1. Home - Iska name 'index' hi rehne dein agar ye main file hai */}
-//       <Drawer.Screen
-//         name="index"
-//         options={{
-//           drawerLabel: "Home",
-//           drawerIcon: ({ color }) => <Home color={color} size={22} />,
-//         }}
-//       />
-
-//       {/* 2. Seeker - Check karein file ka naam 'seeker.tsx' hai ya nahi */}
-//       <Drawer.Screen
-//         name="Seeker"
-//         options={{
-//           drawerLabel: "Seeker Request",
-//           drawerIcon: ({ color }) => <Send color={color} size={22} />,
-//         }}
-//       />
-
-//       {/* 3. Request - Check karein file 'request.tsx' hai ya 'requests.tsx' */}
-//       <Drawer.Screen
-//         name="Request" 
-//         options={{
-//           drawerLabel: "Requests",
-//           drawerIcon: ({ color }) => <ClipboardList color={color} size={22} />,
-//         }}
-//       />
-
-//       {/* 4. Profile - Yahan 'Profile' (Capital P) tha, maine 'profile' kar diya hai */}
-//       <Drawer.Screen
-//         name="Profile" 
-//         options={{
-//           drawerLabel: "My Profile",
-//           drawerIcon: ({ color }) => <User color={color} size={22} />,
-//         }}
-//       />
-
-//       {/* 5. History */}
-//       <Drawer.Screen
-//         name="History"
-//         options={{
-//           drawerLabel: "History",
-//           drawerIcon: ({ color }) => <History color={color} size={22} />,
-//         }}
-//       />
-
-//       {/* 6. Settings */}
-//       <Drawer.Screen
-//         name="Setting"
-//         options={{
-//           drawerLabel: "Settings",
-//           drawerIcon: ({ color }) => <Settings color={color} size={22} />,
-//         }}
-//       />
-
-//       {/* Baqi components ko hide rakhein */}
-//       <Drawer.Screen name="_Dashboard-Component/Header" options={{ drawerItemStyle: { display: "none" } }} />
-//       <Drawer.Screen name="_Dashboard-Component/Parent" options={{ drawerItemStyle: { display: "none" } }} />
-//       <Drawer.Screen name="_Dashboard-Component/SideBar" options={{ drawerItemStyle: { display: "none" } }} />
-//     </Drawer>
-//   );
-// }
-
-import { Tabs } from "expo-router"; // Ensure this import is exactly like this
+// app/(dashboard)/_layout.js
+import React from "react";
+import { Tabs } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { View, useWindowDimensions } from "react-native";
 import {
   Home,
   ClipboardList,
@@ -99,80 +10,133 @@ import {
   History,
   Settings,
 } from "lucide-react-native";
-import { View } from "react-native";
+
+// Import headers
+import ScreenHeader from "../components/ScreenHeader";
+import DashboardHeader from "../components/DashboardHeader";
 
 export default function DashboardLayout() {
+  const insets = useSafeAreaInsets();
+  const { width } = useWindowDimensions();
+  const isTablet = width > 600;
+
   return (
-    <Tabs
-      screenOptions={{
-        headerShown: false,
-        tabBarActiveTintColor: "#ffffff",   // Active icon white
-        tabBarInactiveTintColor: "#fca5a5", // Inactive icon light red (faded)
-        
-        // Tab Bar Styling (Red Theme)
-        tabBarStyle: {
-          backgroundColor: "#991b1b",       // bg-red-800
-          borderTopWidth: 0,
-          height: 70,
-          paddingBottom: 12,
-          paddingTop: 3,
-          elevation: 10,                    // Shadow for Android
-          shadowColor: '#002',              // Shadow for iOS
-          shadowOffset: { width: 0, height: -2 },
-          shadowOpacity: 0.1,
-          shadowRadius: 4,
-        },
-        tabBarLabelStyle: {
-          fontSize: 13,
-          fontWeight: "700",
-        },
-      }}
-    >
-      <Tabs.Screen
-        name="index"
-        options={{
-          title: "Home",
-          tabBarIcon: ({ color }) => <Home color={color} size={24} />,
+    <View style={{ flex: 1, backgroundColor: "#ffffff" }}>
+      <Tabs
+        screenOptions={{
+          // 🌟 NATIVE HEADER ROUTING INTEGRATION 🌟
+          headerShown: true,
+          header: ({ options, route }) => {
+            // "index" displays our custom DashboardHeader, others render ScreenHeader
+            if (route.name === "index") {
+              return <DashboardHeader />;
+            }
+            return <ScreenHeader title={options.title || route.name} />;
+          },
+          tabBarTransparent: false,
+          tabBarHideOnKeyboard: true,
+          tabBarActiveTintColor: "#dc2626", // Premium active red color
+          tabBarInactiveTintColor: "#94a3b8", // Muted slate gray
+          tabBarShowLabel: true,
+          tabBarStyle: {
+            backgroundColor: "#ffffff",
+            borderTopWidth: 1,
+            borderTopColor: "#F1F5F9",
+            height: 64 + insets.bottom,
+            paddingBottom: insets.bottom > 0 ? insets.bottom + 2 : 8,
+            paddingTop: 10,
+            position: "relative",
+            bottom: 0,
+            left: 0,
+            right: 0,
+            width: "100%",
+            shadowColor: "#0F172A",
+            shadowOffset: { width: 0, height: -4 },
+            shadowOpacity: 0.02,
+            shadowRadius: 8,
+            elevation: 8,
+          },
+          tabBarItemStyle: {
+            height: 54,
+            justifyContent: "center",
+            alignItems: "center",
+            padding: 0,
+          },
+          tabBarLabelStyle: {
+            fontSize: isTablet ? 12 : 11,
+            fontWeight: "700",
+            marginTop: 4,
+          },
+          tabBarIconStyle: {
+            marginBottom: 0,
+          },
         }}
-      />
+      >
+        {/* 1. Main Dashboard */}
+        <Tabs.Screen
+          name="index"
+          options={{
+            title: "Home",
+            tabBarIcon: ({ color, focused }) => (
+              <View className={focused ? "bg-red-50 p-2 rounded-xl" : ""}>
+                <Home color={color} size={focused ? 22 : 20} />
+              </View>
+            ),
+          }}
+        />
 
-      <Tabs.Screen
-        name="Request"
-        options={{
-          title: "Requests",
-          tabBarIcon: ({ color }) => <ClipboardList color={color} size={24} />,
-        }}
-      />
+        {/* 2. Requests */}
+        <Tabs.Screen
+          name="request"
+          options={{
+            title: "Requests", // 🌟 Dynamically sent to your ScreenHeader
+            tabBarIcon: ({ color, focused }) => (
+              <View className={focused ? "bg-red-50 p-2 rounded-xl" : ""}>
+                <ClipboardList color={color} size={focused ? 22 : 20} />
+              </View>
+            ),
+          }}
+        />
 
-      <Tabs.Screen
-        name="Profile"
-        options={{
-          title: "Profile",
-          tabBarIcon: ({ color }) => <User color={color} size={24} />,
-        }}
-      />
+        {/* 3. History */}
+        <Tabs.Screen
+          name="history"
+          options={{
+            title: "History", // 🌟 Dynamically sent to your ScreenHeader
+            tabBarIcon: ({ color, focused }) => (
+              <View className={focused ? "bg-red-50 p-2 rounded-xl" : ""}>
+                <History color={color} size={focused ? 22 : 20} />
+              </View>
+            ),
+          }}
+        />
 
-      <Tabs.Screen
-        name="History"
-        options={{
-          title: "History",
-          tabBarIcon: ({ color }) => <History color={color} size={24} />,
-        }}
-      />
+        {/* 4. Profile */}
+        <Tabs.Screen
+          name="profile"
+          options={{
+            title: "My Profile", // 🌟 Dynamically sent to your ScreenHeader
+            tabBarIcon: ({ color, focused }) => (
+              <View className={focused ? "bg-red-50 p-2 rounded-xl" : ""}>
+                <User color={color} size={focused ? 22 : 20} />
+              </View>
+            ),
+          }}
+        />
 
-      <Tabs.Screen
-        name="Setting"
-        options={{
-          title: "Settings",
-          tabBarIcon: ({ color }) => <Settings color={color} size={24} />,
-        }}
-      />
-
-      {/* Hidden Screens (In menu mein nahi dikhengi) */}
-      <Tabs.Screen name="Seeker" options={{ href: null }} />
-      <Tabs.Screen name="_Dashboard-Component/Header" options={{ href: null }} />
-      <Tabs.Screen name="_Dashboard-Component/Parent" options={{ href: null }} />
-      <Tabs.Screen name="_Dashboard-Component/SideBar" options={{ href: null }} />
-    </Tabs>
+        {/* 5. Settings */}
+        <Tabs.Screen
+          name="setting"
+          options={{
+            title: "Settings", // 🌟 Dynamically sent to your ScreenHeader
+            tabBarIcon: ({ color, focused }) => (
+              <View className={focused ? "bg-red-50 p-2 rounded-xl" : ""}>
+                <Settings color={color} size={focused ? 22 : 20} />
+              </View>
+            ),
+          }}
+        />
+      </Tabs>
+    </View>
   );
 }
