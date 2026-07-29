@@ -1,34 +1,38 @@
-import React, { createContext, useContext, useState, useMemo } from "react";
-import { State, City } from "country-state-city";
+import React, { createContext, useContext, useState } from "react";
+import {
+  PAKISTAN_LOCATIONS,
+  BLOOD_GROUPS,
+} from "../constants/pakistanLocations";
 
 const LocationContext = createContext();
-const countryCode = "PK";
 
 export const LocationProvider = ({ children }) => {
   const [province, setProvince] = useState("");
   const [city, setCity] = useState("");
   const [bloodType, setBloodType] = useState("");
-  const [modalType, setModalType] = useState(null);
-  // Memoize the data once at the provider level
-  const allProvinces = useMemo(() => State.getStatesOfCountry(countryCode), []);
+  const [modalType, setModalType] = useState(null); // 'bloodType' | 'province' | 'city' | null
 
-  const allCities = useMemo(
-    () => (province ? City.getCitiesOfState(countryCode, province) : []),
-    [province],
-  );
+  // Get cities dynamically based on selected province
+  const availableCities = province ? PAKISTAN_LOCATIONS[province] || [] : [];
+  const availableProvinces = Object.keys(PAKISTAN_LOCATIONS);
+
+  const selectProvince = (selectedProv) => {
+    setProvince(selectedProv);
+    setCity(""); // Reset city when province changes
+  };
 
   const value = {
     province,
-    setProvince,
+    setProvince: selectProvince,
     city,
     setCity,
     bloodType,
     setBloodType,
-    allProvinces,
-    allCities,
-    countryCode,
-    modalType, // Export the state
+    modalType,
     setModalType,
+    availableProvinces,
+    availableCities,
+    bloodGroups: BLOOD_GROUPS,
   };
 
   return (

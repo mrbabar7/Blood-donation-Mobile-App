@@ -3,7 +3,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { StyleSheet } from "react-native";
 import AuthScreenHeader from "../components/AuthScreenHeader";
 
-export default function UnauthorizedLayout() {
+export default function RegistrationLayout() {
   return (
     <SafeAreaView style={styles.safeContainer} edges={["bottom"]}>
       <Stack
@@ -14,8 +14,10 @@ export default function UnauthorizedLayout() {
           ),
         }}
       >
-        <Stack.Screen name="login" options={{ title: "Login to Account" }} />
-        <Stack.Screen name="signup" options={{ title: "Create Account" }} />
+        <Stack.Screen
+          name="donor-registration"
+          options={{ title: "Donor Registration" }}
+        />
       </Stack>
     </SafeAreaView>
   );

@@ -1,30 +1,73 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState } from "react";
 import {
   View,
   ScrollView,
   TouchableOpacity,
   ActivityIndicator,
-  Alert,
-  Dimensions,
+  Modal,
 } from "react-native";
 import {
   MapPin,
-  Phone,
-  X,
   Droplet,
-  Check,
-  Clock,
   ChevronDown,
   Filter,
-  ExternalLink,
   Search,
+  Building2,
+  HeartHandshake,
+  Truck,
+  Building,
+  CheckCircle2,
+  XCircle,
+  AlertCircle,
+  X,
 } from "lucide-react-native";
-import { useLocation } from "../../context/LocationContext"; // Using your custom location hook
-import { MotiView, AnimatePresence } from "moti";
-import AppText from "../../components/AppText";
+import { AnimatePresence } from "moti";
 import { useRouter } from "expo-router";
+import { LinearGradient } from "expo-linear-gradient";
+import AppText from "../../components/AppText";
+import SelectionModal from "../../components/SelectionModal";
+import DonorCard from "../components/DonorCard";
+import { useLocation } from "../../context/LocationContext";
+import {
+  PAKISTAN_LOCATIONS,
+  BLOOD_GROUPS,
+} from "../../constants/pakistanLocations";
 
-const bloodTypes = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
+// Quick Services Options
+const QUICK_SERVICES = [
+  {
+    id: "hospitals",
+    title: "Hospitals",
+    icon: Building2,
+    route: "/(registration)/hospitals",
+    bgColor: "bg-blue-500/10",
+    iconColor: "#2563eb",
+  },
+  {
+    id: "blood-banks",
+    title: "Blood Banks",
+    icon: Building,
+    route: "/(registration)/blood-banks",
+    bgColor: "bg-red-500/10",
+    iconColor: "#dc2626",
+  },
+  {
+    id: "ngos",
+    title: "NGOs",
+    icon: HeartHandshake,
+    route: "/(registration)/ngos",
+    bgColor: "bg-emerald-500/10",
+    iconColor: "#059669",
+  },
+  {
+    id: "ambulance",
+    title: "Ambulance",
+    icon: Truck,
+    route: "/(registration)/ambulance",
+    bgColor: "bg-amber-500/10",
+    iconColor: "#d97706",
+  },
+];
 
 export default function SeekerInterface() {
   const router = useRouter();
@@ -35,6 +78,7 @@ export default function SeekerInterface() {
     setCity,
     bloodType,
     setBloodType,
+    modalType,
     setModalType,
   } = useLocation();
 
@@ -44,9 +88,31 @@ export default function SeekerInterface() {
   const [cancelLoadingId, setCancelLoadingId] = useState(null);
   const [visibleCount, setVisibleCount] = useState(6);
 
+  // Custom Modal State for replacing Alert.alert
+  const [feedbackModal, setFeedbackModal] = useState({
+    visible: false,
+    title: "",
+    message: "",
+    type: "info", // "success" | "error" | "info"
+  });
+
+  const showPopup = (title, message, type = "info") => {
+    setFeedbackModal({ visible: true, title, message, type });
+  };
+
+  const hidePopup = () => {
+    setFeedbackModal((prev) => ({ ...prev, visible: false }));
+  };
+
   const isSearchDisabled = !province || !city || !bloodType;
 
-  // Ported Web Logic: Calculate Days Left for Recovery
+  // Location selection lists derived from constants
+  const availableProvinces = Object.keys(PAKISTAN_LOCATIONS || {});
+  const availableCities =
+    province && PAKISTAN_LOCATIONS[province]
+      ? PAKISTAN_LOCATIONS[province]
+      : [];
+
   const calculateDaysLeft = (targetDate) => {
     if (!targetDate) return 0;
     const diff = new Date(targetDate) - new Date();
@@ -54,34 +120,31 @@ export default function SeekerInterface() {
     return days > 0 ? days : 0;
   };
 
-  // Ported Web Logic: Fetch Donors
   const fetchDonors = async () => {
     if (!province || !bloodType) return;
-    console.log("Fetching donors with:", { province, city, bloodType });
     setLoading(true);
     try {
       const query = new URLSearchParams({
-        province: province,
+        province,
         district: city,
-        bloodType: bloodType,
+        bloodType,
       }).toString();
 
       const response = await fetch(
         `${process.env.EXPO_PUBLIC_API_URL}/api/seeker/search?${query}`,
       );
+      console.log("donor fetchinf response :", response);
       const data = await response.json();
-      console.log("Search Results:", data);
       if (response.ok) {
         setDonors(data);
       }
     } catch (err) {
-      console.error("Search Error:", err);
+      showPopup("Search Failed", "Unable to fetch donors right now.", "error");
     } finally {
       setLoading(false);
     }
   };
 
-  // Ported Web Logic: Send Request
   const handleRequestBlood = async (donorId, bType) => {
     setRequestingId(donorId);
     try {
@@ -94,8 +157,13 @@ export default function SeekerInterface() {
         },
       );
       const result = await response.json();
+      console.log("fuck result:", result);
       if (response.ok) {
-        Alert.alert("Success", "Request Sent Successfully!");
+        showPopup(
+          "Request Sent",
+          "Your request has been sent to the donor.",
+          "success",
+        );
         setDonors((prev) =>
           prev.map((d) =>
             d._id === donorId
@@ -107,15 +175,24 @@ export default function SeekerInterface() {
               : d,
           ),
         );
+      } else {
+        showPopup(
+          "Error",
+          result?.message || "Failed to send request.",
+          "error",
+        );
       }
     } catch (err) {
-      Alert.alert("Error", "Failed to send request");
+      showPopup(
+        "Error",
+        "Failed to send request. Check your internet connection.",
+        "error",
+      );
     } finally {
       setRequestingId(null);
     }
   };
 
-  // Ported Web Logic: Cancel Request
   const handleCancelRequest = async (donorId) => {
     setCancelLoadingId(donorId);
     try {
@@ -126,92 +203,194 @@ export default function SeekerInterface() {
         },
       );
       if (response.ok) {
-        Alert.alert("Success", "Request Cancelled");
+        showPopup("Cancelled", "Your blood request was cancelled.", "info");
         setDonors((prev) =>
           prev.map((d) =>
             d._id === donorId ? { ...d, requestStatus: null } : d,
           ),
         );
+      } else {
+        showPopup("Error", "Failed to cancel request.", "error");
       }
     } catch (err) {
-      Alert.alert("Error", "Failed to cancel request");
+      showPopup("Error", "Failed to cancel request.", "error");
     } finally {
       setCancelLoadingId(null);
     }
   };
 
   return (
-    <View className="flex-1 bg-[#F8FAFC]">
+    <View className="flex-1 bg-slate-50">
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: 40 }}
+        contentContainerStyle={{ paddingBottom: 60 }}
       >
-        <View className="px-5 pt-6 space-y-3">
-          {/* Province Selector (Style matched to Web) */}
-          <TouchableOpacity
-            onPress={() => setModalType("province")}
-            className="flex-row items-center bg-white border border-gray-200 rounded-2xl h-[56px] px-4 shadow-sm"
-          >
-            <Filter size={18} color={province ? "#ef4444" : "#94a3b8"} />
-            <AppText className="flex-1 ml-3 text-gray-700 font-bold text-sm">
-              {province || "Select Province"}
-            </AppText>
-            <ChevronDown size={16} color="#94a3b8" />
-          </TouchableOpacity>
+        <View className="px-4 pt-4 space-y-4">
+          {/* --- 1. SINGLE HORIZONTAL PARENT CARD FOR SERVICES --- */}
+          <View className="bg-white rounded-3xl p-3 border border-slate-100 shadow-sm">
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{ gap: 10, paddingRight: 4 }}
+            >
+              {QUICK_SERVICES.map((item) => {
+                const IconComponent = item.icon;
+                return (
+                  <TouchableOpacity
+                    key={item.id}
+                    activeOpacity={0.75}
+                    onPress={() => router.push(item.route)}
+                    className="flex-row items-center bg-slate-50/80 border border-slate-100 px-3.5 py-2.5 rounded-2xl"
+                  >
+                    <View
+                      className={`w-9 h-9 rounded-xl ${item.bgColor} items-center justify-center mr-2.5`}
+                    >
+                      <IconComponent size={18} color={item.iconColor} />
+                    </View>
+                    <AppText
+                      variant="bold"
+                      className="text-slate-800 text-xs tracking-tight pr-1"
+                    >
+                      {item.title}
+                    </AppText>
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
+          </View>
 
-          {/* City Selector */}
-          <TouchableOpacity
-            onPress={() => setModalType("city")}
-            disabled={!province}
-            className={`flex-row items-center bg-white border border-gray-200 my-1.5 rounded-2xl h-[56px] px-4 shadow-sm ${!province && "opacity-50"}`}
-          >
-            <MapPin size={18} color={city ? "#ef4444" : "#94a3b8"} />
-            <AppText className="flex-1 ml-3 text-gray-700 font-bold text-sm">
-              {city || (province ? "Select City" : "Select City First")}
-            </AppText>
-            <ChevronDown size={16} color="#94a3b8" />
-          </TouchableOpacity>
+          {/* --- 2. SEARCH SELECTION SECTION --- */}
+          <View className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm">
+            {/* Centered Professional Header */}
+            <View className="items-center mb-5">
+              <AppText
+                variant="black"
+                className="text-slate-900 text-lg uppercase tracking-wide text-center"
+              >
+                Search for Donors
+              </AppText>
+              <AppText
+                variant="medium"
+                className="text-slate-400 text-xs text-center mt-0.5"
+              >
+                Find available blood donors in your area
+              </AppText>
+            </View>
 
-          {/* Blood Group Selector (Professional Select Style) */}
-          <TouchableOpacity
-            onPress={() => setModalType("bloodType")} // Trigger your custom blood type picker
-            className="flex-row items-center bg-white border border-gray-200 rounded-2xl h-[56px] px-4 shadow-sm"
-          >
-            <Droplet size={18} color="#ef4444" fill="#ef4444" />
-            <AppText className="flex-1 ml-3 text-gray-700 font-bold text-sm">
-              {bloodType || "Select Blood Group"}
-            </AppText>
-            <ChevronDown size={16} color="#94a3b8" />
-          </TouchableOpacity>
-
-          {/* Search Button */}
-          <TouchableOpacity
-            onPress={fetchDonors}
-            disabled={isSearchDisabled || loading}
-            className={`h-[56px] rounded-2xl flex-row items-center justify-center mt-2 shadow-lg ${
-              isSearchDisabled ? "bg-gray-700" : "bg-red-600 shadow-red-200"
-            }`}
-          >
-            {loading ? (
-              <ActivityIndicator color="white" />
-            ) : (
-              <>
-                <Search size={18} color="white" />
-                <AppText variant="bold" className="text-white ml-2 text-base">
-                  Find Donors
+            {/* Selection Fields Container */}
+            <View className="space-y-3">
+              {/* Province Field Selector */}
+              <TouchableOpacity
+                activeOpacity={0.7}
+                onPress={() => setModalType("province")}
+                className="flex-row items-center bg-slate-50/80 border border-red-700 rounded-[30px] h-14 px-4 mb-2"
+              >
+                <View className="w-8 items-center justify-center">
+                  <Filter size={18} color={province ? "#dc2626" : "#94a3b8"} />
+                </View>
+                <AppText
+                  variant="bold"
+                  className={`flex-1 ml-2 text-sm ${
+                    province ? "text-slate-900" : "text-slate-400"
+                  }`}
+                >
+                  {province || "Select Province"}
                 </AppText>
-              </>
-            )}
-          </TouchableOpacity>
+                <ChevronDown size={18} color="#94a3b8" />
+              </TouchableOpacity>
+
+              {/* City Field Selector */}
+              <TouchableOpacity
+                activeOpacity={0.7}
+                onPress={() => {
+                  if (!province) {
+                    showPopup(
+                      "Selection Required",
+                      "Please choose a province before selecting a city.",
+                      "info",
+                    );
+                    return;
+                  }
+                  setModalType("city");
+                }}
+                className={`flex-row items-center bg-slate-50/80 border  border-red-700 rounded-[30px] h-14 px-4 mb-2 ${
+                  !province ? "opacity-50" : ""
+                }`}
+              >
+                <View className="w-8 items-center justify-center">
+                  <MapPin size={18} color={city ? "#dc2626" : "#94a3b8"} />
+                </View>
+                <AppText
+                  variant="bold"
+                  className={`flex-1 ml-2 text-sm ${
+                    city ? "text-slate-900" : "text-slate-400"
+                  }`}
+                >
+                  {city || (province ? "Select City" : "Select Province First")}
+                </AppText>
+                <ChevronDown size={18} color="#94a3b8" />
+              </TouchableOpacity>
+
+              {/* Blood Type Field Selector */}
+              <TouchableOpacity
+                activeOpacity={0.7}
+                onPress={() => setModalType("bloodType")}
+                className="flex-row items-center bg-slate-50/80 border  border-red-700 rounded-[30px] h-14 px-4 mb-2"
+              >
+                <View className="w-8 items-center justify-center">
+                  <Droplet
+                    size={18}
+                    color={bloodType ? "#dc2626" : "#94a3b8"}
+                    fill={bloodType ? "#dc2626" : "transparent"}
+                  />
+                </View>
+                <AppText
+                  variant="bold"
+                  className={`flex-1 ml-2 text-sm ${
+                    bloodType ? "text-slate-900" : "text-slate-400"
+                  }`}
+                >
+                  {bloodType || "Select Blood Group"}
+                </AppText>
+                <ChevronDown size={18} color="#94a3b8" />
+              </TouchableOpacity>
+
+              {/* Find Donors Action Button */}
+              <TouchableOpacity
+                activeOpacity={0.85}
+                onPress={fetchDonors}
+                disabled={isSearchDisabled || loading}
+                className={`h-14  flex-row rounded-[30px] items-center justify-center mt-2 shadow-md ${
+                  isSearchDisabled
+                    ? "bg-slate-300 shadow-none"
+                    : "bg-red-800 shadow-red-200"
+                }`}
+              >
+                {loading ? (
+                  <ActivityIndicator color="white" />
+                ) : (
+                  <>
+                    <Search size={18} color="white" />
+                    <AppText
+                      variant="black"
+                      className="text-white ml-2 text-sm uppercase tracking-wider"
+                    >
+                      Find Donors
+                    </AppText>
+                  </>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
         </View>
 
-        {/* --- MAIN CONTENT AREA --- */}
-        <View className="px-5 mt-6 border-t border-gray-100 pt-6">
+        {/* --- DONORS RESULTS CONTENT AREA --- */}
+        <View className="px-4 mt-4">
           <AnimatePresence>
             {donors.length > 0 ? (
               donors
                 .slice(0, visibleCount)
-                .map((donor, index) => (
+                .map((donor) => (
                   <DonorCard
                     key={donor._id}
                     donor={donor}
@@ -230,10 +409,22 @@ export default function SeekerInterface() {
                   />
                 ))
             ) : (
-              <View className="items-center justify-center py-20">
-                <Droplet size={40} color="#ef4444" className="mb-4" />
-                <AppText className="text-red-500 font-black text-[10px] tracking-widest text-center uppercase">
-                  Select filters and click Find to search Blood
+              <View className="items-center justify-center py-12 bg-white rounded-3xl border border-slate-100 p-6">
+                <View className="w-14 h-14 bg-red-50 rounded-full items-center justify-center mb-3">
+                  <Droplet size={24} color="#dc2626" fill="#dc2626" />
+                </View>
+                <AppText
+                  variant="black"
+                  className="text-slate-800 text-sm uppercase tracking-wider text-center"
+                >
+                  Search Emergency Donors
+                </AppText>
+                <AppText
+                  variant="medium"
+                  className="text-slate-400 text-xs text-center mt-1 max-w-[240px]"
+                >
+                  Select location and blood group filters above to locate active
+                  donors nearby.
                 </AppText>
               </View>
             )}
@@ -242,181 +433,127 @@ export default function SeekerInterface() {
           {donors.length > visibleCount && (
             <TouchableOpacity
               onPress={() => setVisibleCount((prev) => prev + 6)}
-              className="bg-red-600 h-14 rounded-2xl items-center justify-center mt-4 shadow-lg shadow-red-200"
+              activeOpacity={0.85}
+              className="bg-slate-900 h-14 rounded-2xl items-center justify-center mt-2 shadow-sm"
             >
-              <AppText variant="bold" className="text-white">
+              <AppText
+                variant="black"
+                className="text-white text-xs uppercase tracking-wider"
+              >
                 Load More Donors
               </AppText>
             </TouchableOpacity>
           )}
         </View>
       </ScrollView>
+
+      {/* --- SELECTION MODALS --- */}
+      <SelectionModal
+        visible={modalType === "province"}
+        title="Select Province"
+        data={availableProvinces}
+        selectedValue={province}
+        onSelect={(val) => {
+          setProvince(val);
+          setCity(""); // Reset city when province changes
+          setModalType(null);
+        }}
+        onClose={() => setModalType(null)}
+      />
+
+      <SelectionModal
+        visible={modalType === "city"}
+        title={`Select City (${province || ""})`}
+        data={availableCities}
+        selectedValue={city}
+        onSelect={(val) => {
+          setCity(val);
+          setModalType(null);
+        }}
+        onClose={() => setModalType(null)}
+      />
+
+      <SelectionModal
+        visible={modalType === "bloodType"}
+        title="Select Blood Group"
+        data={BLOOD_GROUPS}
+        selectedValue={bloodType}
+        onSelect={(val) => {
+          setBloodType(val);
+          setModalType(null);
+        }}
+        onClose={() => setModalType(null)}
+      />
+
+      {/* --- 3. PROFESSIONAL REUSABLE POPUP MODAL --- */}
+      <Modal
+        visible={feedbackModal.visible}
+        transparent
+        animationType="fade"
+        onRequestClose={hidePopup}
+      >
+        <View className="flex-1 bg-black/50 justify-center items-center px-6">
+          <View className="bg-white w-full rounded-3xl p-6 items-center shadow-xl">
+            <TouchableOpacity
+              onPress={hidePopup}
+              className="absolute top-4 right-4 p-1 rounded-full bg-slate-100"
+            >
+              <X size={16} color="#64748b" />
+            </TouchableOpacity>
+
+            {/* Modal Icon Badge */}
+            <View
+              className={`w-14 h-14 rounded-full items-center justify-center mb-4 ${
+                feedbackModal.type === "success"
+                  ? "bg-emerald-100"
+                  : feedbackModal.type === "error"
+                    ? "bg-red-100"
+                    : "bg-blue-100"
+              }`}
+            >
+              {feedbackModal.type === "success" && (
+                <CheckCircle2 size={28} color="#059669" />
+              )}
+              {feedbackModal.type === "error" && (
+                <XCircle size={28} color="#dc2626" />
+              )}
+              {feedbackModal.type === "info" && (
+                <AlertCircle size={28} color="#2563eb" />
+              )}
+            </View>
+
+            {/* Modal Title */}
+            <AppText
+              variant="black"
+              className="text-slate-900 text-lg text-center"
+            >
+              {feedbackModal.title}
+            </AppText>
+
+            {/* Modal Description */}
+            <AppText
+              variant="medium"
+              className="text-slate-500 text-xs text-center mt-2 leading-relaxed px-2"
+            >
+              {feedbackModal.message}
+            </AppText>
+
+            {/* Close Button */}
+            <TouchableOpacity
+              onPress={hidePopup}
+              activeOpacity={0.8}
+              className="w-full bg-slate-900 h-12 rounded-2xl items-center justify-center mt-6"
+            >
+              <AppText
+                variant="bold"
+                className="text-white text-xs uppercase tracking-wider"
+              >
+                Dismiss
+              </AppText>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
-
-const DonorCard = ({
-  donor,
-  daysLeft,
-  onRequest,
-  onCancel,
-  isRequesting,
-  cancelLoading,
-  onDetails,
-}) => {
-  const isLocked = daysLeft > 0;
-
-  return (
-    <MotiView
-      from={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="bg-white rounded-[2rem] p-6 mb-4 border border-gray-100 shadow-sm"
-    >
-      <View className="flex-row justify-between items-start mb-4">
-        <View className="flex-1">
-          <View
-            className={`px-3 py-1 rounded-full self-start mb-2 ${
-              isLocked
-                ? "bg-red-50"
-                : donor.isAvailable
-                  ? "bg-emerald-50"
-                  : "bg-gray-100"
-            }`}
-          >
-            <AppText
-              className={`text-[9px] font-black  tracking-wider ${
-                isLocked
-                  ? "text-red-700"
-                  : donor.isAvailable
-                    ? "text-emerald-600"
-                    : "text-gray-500"
-              }`}
-            >
-              ●{" "}
-              {isLocked
-                ? `Recovering (${daysLeft}d)`
-                : donor.isAvailable
-                  ? "Available"
-                  : "Busy"}
-            </AppText>
-          </View>
-          <AppText variant="bold" className="font-bold text-lg leading-tight">
-            {donor.fullName}
-          </AppText>
-          <View className="flex-row items-center mt-1">
-            <MapPin size={12} color="#f87171" />
-            <AppText className="text-xs font-bold ml-1">
-              {donor.district}
-            </AppText>
-          </View>
-        </View>
-
-        <View className="w-14 h-14 bg-red-600 rounded-2xl items-center justify-center shadow-md shadow-red-200">
-          <AppText variant="bold" className="text-white font-bold text-xl">
-            {donor.bloodType}
-          </AppText>
-        </View>
-      </View>
-
-      <View className="flex-row bg-gray-50 rounded-2xl p-4 mb-5 justify-between">
-        <View>
-          <AppText className="text-[9px] font-black text-gray-400 uppercase">
-            Lives Saved
-          </AppText>
-          <AppText variant="bold" className="text-gray-700 text-xs">
-            {donor.livesSaved || 0} Times
-          </AppText>
-        </View>
-        <View>
-          <AppText className="text-[9px] font-black text-gray-400 uppercase">
-            Age
-          </AppText>
-          <AppText variant="bold" className="text-gray-700 text-xs">
-            {donor.age} Years
-          </AppText>
-        </View>
-      </View>
-
-      {/* Button Logic exactly from Web */}
-      {donor.requestStatus === "pending" ? (
-        <View className="flex-row gap-2">
-          <View className="flex-[2] bg-amber-500 h-12 rounded-xl flex-row items-center justify-center">
-            <Clock size={14} color="white" />
-            <AppText
-              variant="bold"
-              className="text-white text-[10px] ml-2 uppercase"
-            >
-              Pending
-            </AppText>
-          </View>
-          <TouchableOpacity
-            onPress={onCancel}
-            className="flex-1 bg-red-50 border border-red-100 h-12 rounded-xl items-center justify-center"
-          >
-            {cancelLoading ? (
-              <ActivityIndicator size="small" color="#ef4444" />
-            ) : (
-              <AppText
-                variant="bold"
-                className="text-red-600 text-[10px] uppercase"
-              >
-                Cancel
-              </AppText>
-            )}
-          </TouchableOpacity>
-        </View>
-      ) : (
-        <View className="flex-row gap-2">
-          <TouchableOpacity
-            disabled={isLocked || !donor.isAvailable || isRequesting}
-            onPress={onRequest}
-            className={`flex-1 h-12 rounded-xl flex-row items-center justify-center ${
-              isLocked || !donor.isAvailable
-                ? "bg-gray-300"
-                : donor.requestStatus === "accepted"
-                  ? "bg-emerald-500"
-                  : "bg-red-600"
-            }`}
-          >
-            {isRequesting ? (
-              <ActivityIndicator color="white" />
-            ) : (
-              <>
-                {donor.requestStatus === "accepted" ? (
-                  <Check size={14} color="white" />
-                ) : (
-                  <Phone size={14} color="white" fill="white" />
-                )}
-                <AppText
-                  variant="bold"
-                  className="text-white text-[10px] ml-2 uppercase"
-                >
-                  {isLocked
-                    ? `Locked (${daysLeft}d)`
-                    : donor.requestStatus === "accepted"
-                      ? "Accepted"
-                      : "Request Blood"}
-                </AppText>
-              </>
-            )}
-          </TouchableOpacity>
-
-          {donor.requestStatus === "accepted" && (
-            <TouchableOpacity
-              onPress={onDetails}
-              className="flex-1 bg-black h-12 rounded-xl flex-row items-center justify-center"
-            >
-              <ExternalLink size={14} color="white" />
-              <AppText
-                variant="bold"
-                className="text-white text-[10px] ml-2 uppercase"
-              >
-                Details
-              </AppText>
-            </TouchableOpacity>
-          )}
-        </View>
-      )}
-    </MotiView>
-  );
-};

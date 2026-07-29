@@ -4,13 +4,11 @@ import { Stack, useRouter, useSegments } from "expo-router";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { View } from "react-native";
 import * as SecureStore from "expo-secure-store";
-import SelectionModal from "../components/SelectionModal";
 import { AuthProvider, useAuth } from "../context/AuthContext";
-import { LocationProvider, useLocation } from "../context/LocationContext";
-
+import { LocationProvider } from "../context/LocationContext";
+import { DonorProvider } from "../context/DonorContext";
 function RootLayoutNav() {
   const { isLoading: authLoading } = useAuth();
-  const { modalType, setModalType } = useLocation();
   const router = useRouter();
   const segments = useSegments();
   const [loadingWelcome, setLoadingWelcome] = useState(true);
@@ -68,13 +66,8 @@ function RootLayoutNav() {
           <Stack.Screen name="welcome" options={{ gestureEnabled: false }} />
           <Stack.Screen name="(dashboard)" />
           <Stack.Screen name="(authentication)" />
+          <Stack.Screen name="(registration)" />
         </Stack>
-
-        <SelectionModal
-          visible={modalType !== null}
-          type={modalType}
-          onClose={() => setModalType(null)}
-        />
       </View>
     </SafeAreaProvider>
   );
@@ -83,9 +76,11 @@ function RootLayoutNav() {
 export default function Layout() {
   return (
     <AuthProvider>
-      <LocationProvider>
-        <RootLayoutNav />
-      </LocationProvider>
+      <DonorProvider>
+        <LocationProvider>
+          <RootLayoutNav />
+        </LocationProvider>
+      </DonorProvider>
     </AuthProvider>
   );
 }

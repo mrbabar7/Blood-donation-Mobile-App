@@ -1,262 +1,268 @@
 import React, { useState } from "react";
 import {
   View,
-  TextInput,
-  TouchableOpacity,
-  ActivityIndicator,
   ScrollView,
-  Alert,
-  Platform,
+  TouchableOpacity,
+  Image,
+  SafeAreaView,
 } from "react-native";
 import { useRouter } from "expo-router";
-import { SafeAreaView } from "react-native-safe-area-context";
 import {
   User,
   Mail,
   Lock,
   Eye,
   EyeOff,
-  UserRoundCheck,
+  ArrowLeft,
+  UserCheck,
 } from "lucide-react-native";
+import FloatingLabelInput from "../components/ui/FloatingLabelInput";
+import GradientButton from "../components/ui/GradientButton";
+import StatusModal from "../components/ui/StatusModal";
+import LoadingOverlay from "../components/ui/LoadingOverlay";
 import AppText from "../../components/AppText";
 
 const apiUrl = process.env.EXPO_PUBLIC_API_URL;
 
 export default function SignUp() {
   const router = useRouter();
+
   const [formData, setFormData] = useState({
     name: "",
     email: "",
     password: "",
   });
+
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState({});
 
-  const handleSignUp = async () => {
+  // Status Modal State
+  const [modalConfig, setModalConfig] = useState({
+    visible: false,
+    type: "error",
+    title: "",
+    message: "",
+  });
+
+  const closeModal = () => setModalConfig({ ...modalConfig, visible: false });
+
+  // Input Validation Logic
+  const validateForm = () => {
     let newErrors = {};
 
-    // 1. FRONTEND PRE-VALIDATION (Matches Joi)
-    if (!formData.name) {
-      newErrors.name = "Full Name is required";
-    } else if (formData.name.length < 5) {
-      newErrors.name = "Name must be at least 5 characters";
+    // 1. Full Name check (at least 3 characters)
+    if (!formData.name.trim()) {
+      newErrors.name = "Full name is required";
+    } else if (formData.name.trim().length < 3) {
+      newErrors.name = "Name must be at least 3 characters";
     }
 
-    if (!formData.email) {
-      newErrors.email = "Email is required";
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = "Invalid email format";
+    // 2. Strict Email check ending in valid domains like .com, .pk, etc.
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    if (!formData.email.trim()) {
+      newErrors.email = "Email address is required";
+    } else if (!emailRegex.test(formData.email.trim())) {
+      newErrors.email = "Enter a valid email ending in .com, .pk, etc.";
     }
 
+    // 3. Password check (at least 6 characters)
     if (!formData.password) {
       newErrors.password = "Password is required";
     } else if (formData.password.length < 6) {
       newErrors.password = "Password must be at least 6 characters";
     }
 
-    if (Object.keys(newErrors).length > 0) {
-      setErrors(newErrors);
-      return;
-    }
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSignUp = async () => {
+    if (!validateForm()) return;
 
     setLoading(true);
-    setErrors({});
 
     try {
+      // Endpoint updated to /api/auth/signup
       const res = await fetch(`${apiUrl}/auth/signup`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          name: formData.name.trim(),
+          email: formData.email.trim().toLowerCase(),
+          password: formData.password,
+        }),
       });
 
       const data = await res.json();
-      console.log("signup response is: ", data);
-      if (data.success) {
-        // Successful signup - redirect to OTP verification
-        Alert.alert(
-          "Account Created",
-          "A 6-digit code has been sent to your email.",
-        );
 
+      if (res.ok && data.success) {
+        // Successful response handling
         router.push({
           pathname: "/(authentication)/verifyotp",
-          // Pass the email from the backend response or formData
           params: { email: data.user?.email || formData.email },
         });
       } else {
-        // 2. DYNAMIC ERROR MAPPING
-        // If backend returns { field: "email", message: "User already exists" }
-        if (data.field) {
+        // Handle Server Status Codes (400, 404, 500)
+        if (res.status === 400 && data.field) {
           setErrors({ [data.field]: data.message });
+        } else if (res.status === 404) {
+          setModalConfig({
+            visible: true,
+            type: "error",
+            title: "Endpoint Error (404)",
+            message:
+              "Authentication server route not found. Check server configuration.",
+          });
+        } else if (res.status === 500) {
+          setModalConfig({
+            visible: true,
+            type: "error",
+            title: "Server Failure (500)",
+            message:
+              "Internal server error. Please try again in a few moments.",
+          });
         } else {
-          setErrors({
-            general: data.message || "Signup failed. Please try again.",
+          setModalConfig({
+            visible: true,
+            type: "error",
+            title: "Signup Failed",
+            message:
+              data.message || "Unable to complete registration. Try again.",
           });
         }
       }
     } catch (err) {
-      console.error("Signup Error:", err);
-      setErrors({ general: "Server error. Please check your connection." });
+      setModalConfig({
+        visible: true,
+        type: "error",
+        title: "Connection Error",
+        message:
+          "Network request failed. Please check your internet connection.",
+      });
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-white/90">
+    <SafeAreaView className="flex-1 bg-white">
+      {/* Top Header Section */}
+
       <ScrollView
-        contentContainerStyle={{ flexGrow: 1 }}
-        className="px-6 pt-6 "
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ flexGrow: 1, paddingBottom: 40 }}
+        className="px-6 pt-6"
+        keyboardShouldPersistTaps="handled"
       >
-        <View className="mb-8 items-center">
-          <AppText variant="heading" className="text-4xl text-center">
-            Create Account
-          </AppText>
-          <AppText className="text-slate-500 mt-2 text-center">
-            Join our community of blood donors.
-          </AppText>
-        </View>
-
-        <View className="space-y-4">
-          <View>
-            <AppText variant="medium" className="mb-2">
-              Full Name
-            </AppText>
-            <View
-              className={`flex-row items-center border rounded-xl px-4 py-3 ${errors.name ? "border-red-500 bg-red-50" : "border-slate-200 bg-slate-50"}`}
-            >
-              <User size={20} color={errors.name ? "#ef4444" : "#64748b"} />
-              <TextInput
-                className="flex-1 ml-3 text-slate-900 font-inter"
-                style={Platform.OS === "web" ? { outlineStyle: "none" } : {}}
-                selectionColor="#ef4444"
-                placeholder="John Doe"
-                value={formData.name}
-                onChangeText={(text) => {
-                  setFormData({ ...formData, name: text });
-                  if (errors.name) setErrors({ ...errors, name: null });
-                }}
-              />
-            </View>
-            {errors.name && (
-              <AppText variant="error" className="mt-1 text-xs">
-                {errors.name}
-              </AppText>
-            )}
-          </View>
-
-          <View className="mt-4">
-            <AppText variant="medium" className="mb-2">
-              Email Address
-            </AppText>
-            <View
-              className={`flex-row items-center border rounded-xl px-4 py-3 ${errors.email ? "border-red-500 bg-red-50" : "border-slate-200 bg-slate-50"}`}
-            >
-              <Mail size={20} color={errors.email ? "#ef4444" : "#64748b"} />
-              <TextInput
-                className="flex-1 ml-3 text-slate-900 font-inter"
-                style={Platform.OS === "web" ? { outlineStyle: "none" } : {}}
-                selectionColor="#ef4444"
-                placeholder="name@example.com"
-                value={formData.email}
-                onChangeText={(text) => {
-                  setFormData({ ...formData, email: text });
-                  if (errors.email) setErrors({ ...errors, email: null });
-                }}
-                autoCapitalize="none"
-                keyboardType="email-address"
-              />
-            </View>
-            {errors.email && (
-              <AppText variant="error" className="mt-1 text-xs">
-                {errors.email}
-              </AppText>
-            )}
-          </View>
-
-          <View className="mt-4">
-            <AppText variant="medium" className="mb-2">
-              Password
-            </AppText>
-            <View
-              className={`flex-row items-center border rounded-xl px-4 py-3 ${errors.password ? "border-red-500 bg-red-50" : "border-slate-200 bg-slate-50"}`}
-            >
-              <Lock size={20} color={errors.password ? "#ef4444" : "#64748b"} />
-              <TextInput
-                className="flex-1 ml-3 text-slate-900 font-inter"
-                style={Platform.OS === "web" ? { outlineStyle: "none" } : {}}
-                selectionColor="#ef4444"
-                placeholder="••••••••"
-                secureTextEntry={!showPassword}
-                value={formData.password}
-                onChangeText={(text) => {
-                  setFormData({ ...formData, password: text });
-                  if (errors.password) setErrors({ ...errors, password: null });
-                }}
-              />
-              <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
-                {showPassword ? (
-                  <EyeOff size={20} color="#64748b" />
-                ) : (
-                  <Eye size={20} color="#64748b" />
-                )}
-              </TouchableOpacity>
-            </View>
-            {errors.password && (
-              <AppText variant="error" className="mt-1 text-xs">
-                {errors.password}
-              </AppText>
-            )}
-          </View>
-
-          {errors.general && (
-            <AppText variant="error" className="mt-4 text-center">
-              {errors.general}
-            </AppText>
-          )}
-
+        <View className=" flex-row mt-10 mb-20 items-center justify-between relative">
           <TouchableOpacity
-            onPress={handleSignUp}
-            disabled={loading}
-            className="w-full bg-red-600 h-14 rounded-2xl items-center justify-center mt-6 shadow-lg shadow-red-100"
+            onPress={() => router.back()}
+            activeOpacity={0.8}
+            className="w-10 h-10 rounded-full bg-red-600 items-center justify-center shadow-md shadow-red-300 z-10"
           >
-            {loading ? (
-              <ActivityIndicator color="white" />
-            ) : (
-              <AppText className="text-white font-bold text-lg">
-                Sign Up
-              </AppText>
-            )}
+            <ArrowLeft size={20} color="#ffffff" />
           </TouchableOpacity>
+
+          {/* Center App Logo */}
+          <View className="absolute left-0 right-0 items-center justify-center">
+            <Image
+              source={require("../../assets/blood-donation-logo.jpeg")} // <-- Update with your app logo path
+              style={{ width: 90, height: 90, borderRadius: 50 }}
+              resizeMode="contain"
+            />
+          </View>
         </View>
 
-        <View className="flex-row items-center my-8">
-          <View className="flex-1 h-[1px] bg-slate-200" />
-          <AppText className="px-4 text-slate-400 text-sm uppercase tracking-widest">
-            Or register with
+        {/* Input Fields with Floating Labels */}
+        <FloatingLabelInput
+          label="Full Name"
+          value={formData.name}
+          onChangeText={(t) => {
+            setFormData({ ...formData, name: t });
+            if (errors.name) setErrors({ ...errors, name: null });
+          }}
+          icon={User}
+          error={errors.name}
+        />
+
+        <FloatingLabelInput
+          label="Email Address"
+          value={formData.email}
+          onChangeText={(t) => {
+            setFormData({ ...formData, email: t });
+            if (errors.email) setErrors({ ...errors, email: null });
+          }}
+          icon={Mail}
+          keyboardType="email-address"
+          error={errors.email}
+        />
+
+        <FloatingLabelInput
+          label="Password"
+          value={formData.password}
+          onChangeText={(t) => {
+            setFormData({ ...formData, password: t });
+            if (errors.password) setErrors({ ...errors, password: null });
+          }}
+          icon={Lock}
+          secureTextEntry={!showPassword}
+          rightIcon={showPassword ? EyeOff : Eye}
+          onRightIconPress={() => setShowPassword(!showPassword)}
+          error={errors.password}
+        />
+
+        {/* Action Button */}
+        <View className="mt-2">
+          <GradientButton title="Sign Up" onPress={handleSignUp} />
+        </View>
+
+        {/* Divider */}
+        <View className="flex-row items-center my-6">
+          <View className="flex-1 h-[1px] bg-slate-100" />
+          <AppText className="px-4 text-slate-400 text-xs uppercase tracking-widest font-bold">
+            Or Register With
           </AppText>
-          <View className="flex-1 h-[1px] bg-slate-200" />
+          <View className="flex-1 h-[1px] bg-slate-100" />
         </View>
 
-        <TouchableOpacity className="w-full flex-row items-center justify-center h-14 border border-slate-200 rounded-2xl bg-white mb-6">
-          <UserRoundCheck size={22} color="#DB4437" />
-          <AppText variant="medium" className="ml-3">
-            Google
+        {/* Google OAuth Button */}
+        <TouchableOpacity
+          activeOpacity={0.8}
+          className="w-full flex-row items-center justify-center h-16 border-2 border-slate-100 rounded-[30px] bg-slate-50/50 mb-8"
+        >
+          <UserCheck size={22} color="#dc2626" />
+          <AppText variant="bold" className="ml-3 text-slate-700 text-base">
+            Continue with Google
           </AppText>
         </TouchableOpacity>
 
-        <View className="flex-row justify-center pb-10">
-          <AppText>Already have an account? </AppText>
+        {/* Footer Link */}
+        <View className="flex-row justify-center items-center">
+          <AppText variant="medium" className="text-slate-500">
+            Already have an account?{" "}
+          </AppText>
           <TouchableOpacity
             onPress={() => router.push("/(authentication)/login")}
           >
-            <AppText className="text-red-600 font-bold underline">
+            <AppText variant="black" className="text-red-600 underline">
               Log In
             </AppText>
           </TouchableOpacity>
         </View>
       </ScrollView>
+
+      {/* Loading Overlay */}
+      <LoadingOverlay visible={loading} message="Creating your account..." />
+
+      {/* Status Modal Popup */}
+      <StatusModal
+        visible={modalConfig.visible}
+        type={modalConfig.type}
+        title={modalConfig.title}
+        message={modalConfig.message}
+        onClose={closeModal}
+      />
     </SafeAreaView>
   );
 }

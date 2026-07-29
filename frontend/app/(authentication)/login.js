@@ -1,254 +1,25 @@
-// import React, { useState, useEffect } from "react";
-// import {
-//   View,
-//   TextInput,
-//   TouchableOpacity,
-//   ActivityIndicator,
-//   ScrollView,
-//   Alert,
-// } from "react-native";
-// import { useRouter } from "expo-router";
-// import AsyncStorage from "@react-native-async-storage/async-storage";
-// import { SafeAreaView } from "react-native-safe-area-context";
-// import { UserRoundCheck, Mail, Lock, Eye, EyeOff } from "lucide-react-native";
-// import AppText from "../../components/AppText";
-// import * as SecureStore from "expo-secure-store";
-// const apiUrl = process.env.EXPO_PUBLIC_API_URL;
-
-// export default function LogIn() {
-//   const router = useRouter();
-//   const [formData, setFormData] = useState({ email: "", password: "" });
-//   const [loading, setLoading] = useState(false);
-//   const [showPassword, setShowPassword] = useState(false);
-//   const [errors, setErrors] = useState({});
-//   const handleLogin = async () => {
-//     let newErrors = {};
-//     if (!formData.email) {
-//       newErrors.email = "Email is required";
-//     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-//       newErrors.email = "Invalid email format";
-//     }
-
-//     if (!formData.password) {
-//       newErrors.password = "Password is required";
-//     } else if (formData.password.length < 6) {
-//       newErrors.password = "Password must be at least 6 characters";
-//     }
-
-//     if (Object.keys(newErrors).length > 0) {
-//       setErrors(newErrors);
-//       return;
-//     }
-
-//     setLoading(true);
-//     setErrors({});
-
-//     try {
-//       const res = await fetch(`${apiUrl}/auth/login`, {
-//         method: "POST",
-//         headers: { "Content-Type": "application/json" },
-//         body: JSON.stringify(formData),
-//       });
-
-//       const data = await res.json();
-//       console.log("Login Response:", data);
-//       if (data.success) {
-//         // 2. TOKEN STORAGE (Crucial for Mobile)
-//         // Store the JWT token and User data
-//         await SecureStore.setItemAsync("userToken", data.token);
-//         await SecureStore.setItemAsync("user", JSON.stringify(data.user));
-
-//         // 3. Update Global State (Optional but recommended)
-//         // If you have a setUser function from useAuth()
-//         // setUser(data.user);
-
-//         router.replace("/(dashboard)");
-//       } else {
-//         // 4. MAPPING BACKEND ERRORS TO SPECIFIC FIELDS
-//         if (data.notVerified) {
-//           Alert.alert("Verify Email", "Please verify your email first.");
-//           router.push({
-//             pathname: "/(authentication)/verifyotp",
-//             params: { email: formData.email },
-//           });
-//         } else if (data.field) {
-//           // This maps "email" or "password" errors from Joi directly to your UI
-//           setErrors({ [data.field]: data.message });
-//         } else {
-//           setErrors({ general: data.message });
-//         }
-//       }
-//     } catch (err) {
-//       console.error("Login Fetch Error:", err);
-//       setErrors({ general: "Connection failed. Check your server/IP." });
-//     } finally {
-//       setLoading(false);
-//     }
-//   };
-//   return (
-//     <SafeAreaView className="flex-1 bg-white/90">
-//       <ScrollView
-//         contentContainerStyle={{ flexGrow: 1 }}
-//         className="px-6 pt-10"
-//       >
-//         <View className="mb-10 items-center justify-center">
-//           <AppText variant="heading" className="text-4xl">
-//             Welcome Back
-//           </AppText>
-//           <AppText className="text-slate-500 mt-2">
-//             Please enter your details to login.
-//           </AppText>
-//         </View>
-
-//         <View className="space-y-4">
-//           <View>
-//             <AppText variant="medium" className="mb-2">
-//               Email Address
-//             </AppText>
-//             <View
-//               className={`flex-row items-center border rounded-xl px-4 py-3 ${errors.email ? "border-red-500 bg-red-50" : "border-slate-200 bg-slate-50"}`}
-//             >
-//               <Mail size={20} color={errors.email ? "#ef4444" : "#64748b"} />
-//               <TextInput
-//                 className="flex-1 ml-3 text-slate-900 font-inter"
-//                 style={{ outlineStyle: "none" }}
-//                 selectionColor="#ef4444"
-//                 placeholder="name@email.com"
-//                 value={formData.email}
-//                 onChangeText={(text) => {
-//                   setFormData({ ...formData, email: text });
-//                   if (errors.email) setErrors({ ...errors, email: null });
-//                 }}
-//                 autoCapitalize="none"
-//                 keyboardType="email-address"
-//               />
-//             </View>
-//             {errors.email && (
-//               <AppText className="text-red-500 text-xs mt-1 ml-1">
-//                 {errors.email}
-//               </AppText>
-//             )}
-//           </View>
-
-//           <View className="mt-4">
-//             <AppText variant="medium" className="mb-2">
-//               Password
-//             </AppText>
-//             <View
-//               className={`flex-row items-center border rounded-xl px-4 py-3 ${errors.password ? "border-red-500 bg-red-50" : "border-slate-200 bg-slate-50"}`}
-//             >
-//               <Lock size={20} color={errors.password ? "#ef4444" : "#64748b"} />
-//               <TextInput
-//                 className="flex-1 ml-3 text-slate-900 font-inter"
-//                 style={{ outlineStyle: "none" }}
-//                 selectionColor="#ef4444"
-//                 placeholder="••••••••"
-//                 secureTextEntry={!showPassword}
-//                 value={formData.password}
-//                 onChangeText={(text) => {
-//                   setFormData({ ...formData, password: text });
-//                   if (errors.password) setErrors({ ...errors, password: null });
-//                 }}
-//               />
-//               <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
-//                 {showPassword ? (
-//                   <EyeOff size={20} color="#64748b" />
-//                 ) : (
-//                   <Eye size={20} color="#64748b" />
-//                 )}
-//               </TouchableOpacity>
-//             </View>
-//             {errors.password && (
-//               <AppText className="text-red-500 text-xs mt-1 ml-1">
-//                 {errors.password}
-//               </AppText>
-//             )}
-
-//             <TouchableOpacity
-//               onPress={() => router.push("/forgotpassword")}
-//               style={{ alignSelf: "flex-end" }}
-//               className="mt-2"
-//             >
-//               <AppText
-//                 style={{ color: "#dc2626" }}
-//                 className="text-red-600 font-bold text-right"
-//               >
-//                 Forgot Password?
-//               </AppText>
-//             </TouchableOpacity>
-//           </View>
-
-//           {errors.general && (
-//             <AppText variant="error" className="mt-2 text-center">
-//               {errors.general}
-//             </AppText>
-//           )}
-
-//           <TouchableOpacity
-//             onPress={handleLogin}
-//             disabled={loading}
-//             className="w-full bg-red-600 h-14 rounded-2xl items-center justify-center mt-8 shadow-lg shadow-red-200"
-//           >
-//             {loading ? (
-//               <ActivityIndicator color="white" />
-//             ) : (
-//               <AppText className="text-white font-bold text-lg">Login</AppText>
-//             )}
-//           </TouchableOpacity>
-//         </View>
-
-//         <View className="flex-row items-center my-8">
-//           <View className="flex-1 h-[1px] bg-slate-200" />
-//           <AppText className="px-4 text-slate-400 text-sm  uppercase tracking-widest">
-//             Or register with
-//           </AppText>
-//           <View className="flex-1 h-[1px] bg-slate-200" />
-//         </View>
-
-//         <TouchableOpacity
-//           className="w-full flex-row items-center justify-center h-14 border border-slate-200 rounded-2xl mb-6 bg-white"
-//           onPress={() => Alert.alert("Google Login", "Integration needed.")}
-//         >
-//           <UserRoundCheck size={22} color="#DB4437" />
-//           <AppText variant="medium" className="ml-3">
-//             Google
-//           </AppText>
-//         </TouchableOpacity>
-
-//         <View className="flex-row justify-center mt-auto pb-10">
-//           <AppText>Don't have an account? </AppText>
-//           <TouchableOpacity
-//             onPress={() => router.push("/(authentication)/signup")}
-//           >
-//             <AppText className="text-red-600 font-bold underline">
-//               Create Account
-//             </AppText>
-//           </TouchableOpacity>
-//         </View>
-//       </ScrollView>
-//     </SafeAreaView>
-//   );
-// }
-
-import React, { useState, useEffect } from "react";
-import {
-  View,
-  TextInput,
-  TouchableOpacity,
-  ActivityIndicator,
-  ScrollView,
-  Alert,
-} from "react-native";
-import { useRouter } from "expo-router";
+import React, { useState } from "react";
+import { View, ScrollView, TouchableOpacity, Image } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { UserRoundCheck, Mail, Lock, Eye, EyeOff } from "lucide-react-native";
-import AppText from "../../components/AppText";
+import { useRouter } from "expo-router";
+import {
+  Mail,
+  Lock,
+  Eye,
+  EyeOff,
+  ArrowLeft,
+  UserCheck,
+} from "lucide-react-native";
 import * as SecureStore from "expo-secure-store";
 import * as WebBrowser from "expo-web-browser";
 import * as Linking from "expo-linking";
-import { useAuth } from "../../context/AuthContext"; // Adjust path if needed
+import FloatingLabelInput from "../components/ui/FloatingLabelInput";
+import GradientButton from "../components/ui/GradientButton";
+import StatusModal from "../components/ui/StatusModal";
+import LoadingOverlay from "../components/ui/LoadingOverlay";
+import AppText from "../../components/AppText";
+import { useAuth } from "../../context/AuthContext";
 
-// Tell WebBrowser to complete auth session if redirected back
 WebBrowser.maybeCompleteAuthSession();
 
 const apiUrl = process.env.EXPO_PUBLIC_API_URL;
@@ -256,30 +27,132 @@ const apiUrl = process.env.EXPO_PUBLIC_API_URL;
 export default function LogIn() {
   const router = useRouter();
   const { setUser } = useAuth() || {};
-  const [formData, setFormData] = useState({ email: "", password: "" });
+
+  const [formData, setFormData] = useState({
+    email: "",
+    password: "",
+  });
+
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState({});
 
+  const [modalConfig, setModalConfig] = useState({
+    visible: false,
+    type: "error",
+    title: "",
+    message: "",
+  });
+
+  const closeModal = () =>
+    setModalConfig((prev) => ({ ...prev, visible: false }));
+
+  const validateForm = () => {
+    let newErrors = {};
+
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    if (!formData.email.trim()) {
+      newErrors.email = "Email address is required";
+    } else if (!emailRegex.test(formData.email.trim())) {
+      newErrors.email = "Enter a valid email ending in .com, .pk, etc.";
+    }
+
+    if (!formData.password) {
+      newErrors.password = "Password is required";
+    } else if (formData.password.length < 6) {
+      newErrors.password = "Password must be at least 6 characters";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleLogin = async () => {
+    if (!validateForm()) return;
+
+    setLoading(true);
+
+    try {
+      const res = await fetch(`${apiUrl}/auth/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: formData.email.trim().toLowerCase(),
+          password: formData.password,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (res.ok && data.success) {
+        await SecureStore.setItemAsync("userToken", data.token);
+        await SecureStore.setItemAsync("user", JSON.stringify(data.user));
+
+        if (setUser) setUser(data.user);
+
+        router.replace("/(dashboard)");
+      } else {
+        if (data.notVerified) {
+          setModalConfig({
+            visible: true,
+            type: "warning",
+            title: "Email Unverified",
+            message: "Please verify your email address to continue.",
+          });
+          router.push({
+            pathname: "/(authentication)/verifyotp",
+            params: { email: formData.email },
+          });
+        } else if (data.field) {
+          setErrors({ [data.field]: data.message });
+        } else if (res.status === 404) {
+          setModalConfig({
+            visible: true,
+            type: "error",
+            title: "Endpoint Error (404)",
+            message: "Authentication endpoint route not found.",
+          });
+        } else if (res.status === 500) {
+          setModalConfig({
+            visible: true,
+            type: "error",
+            title: "Server Error (500)",
+            message: "Internal server issue. Please try again later.",
+          });
+        } else {
+          setModalConfig({
+            visible: true,
+            type: "error",
+            title: "Login Failed",
+            message: data.message || "Invalid credentials provided.",
+          });
+        }
+      }
+    } catch (err) {
+      setModalConfig({
+        visible: true,
+        type: "error",
+        title: "Connection Error",
+        message: "Check your internet connection and try again.",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleGoogleLogin = async () => {
     try {
       setGoogleLoading(true);
-
-      // Dynamic target URL (Handles Expo Go 'exp://' as well as Production build 'pakblood://')
       const redirectUri = Linking.createURL("google-auth-success");
+      const googleAuthUrl = `${apiUrl}/api/auth/google?platform=mobile&redirect_uri=${encodeURIComponent(
+        redirectUri,
+      )}`;
 
-      // Pass dynamic redirect_uri to backend
-      const googleAuthUrl = `${apiUrl}/api/auth/google?platform=mobile&redirect_uri=${encodeURIComponent(redirectUri)}`;
-
-      console.log("google auth url is :", googleAuthUrl);
-
-      // Open in-app browser session
       const result = await WebBrowser.openAuthSessionAsync(
         googleAuthUrl,
         redirectUri,
       );
-      console.log("results are :", result);
 
       if (result.type === "success" && result.url) {
         const { queryParams } = Linking.parse(result.url);
@@ -290,252 +163,156 @@ export default function LogIn() {
               typeof queryParams.user === "string"
                 ? JSON.parse(queryParams.user)
                 : queryParams.user;
-            console.log("user obg is :", userObj);
-            console.log("token is :", queryParams.token);
-            // Save Token & User in SecureStore
+
             await SecureStore.setItemAsync("userToken", queryParams.token);
             await SecureStore.setItemAsync("user", JSON.stringify(userObj));
 
-            if (setUser) {
-              console.log("user is setting");
-              setUser(userObj);
-            }
+            if (setUser) setUser(userObj);
+
             router.replace("/(dashboard)");
           } catch (parseError) {
-            console.error("Failed to parse user object:", parseError);
-            Alert.alert("Error", "Could not process user profile data.");
+            setModalConfig({
+              visible: true,
+              type: "error",
+              title: "Parsing Error",
+              message: "Could not process Google user profile data.",
+            });
           }
         } else {
-          console.log("fuck");
-          Alert.alert(
-            "Authentication Failed",
-            "Could not complete Google Login.",
-          );
+          setModalConfig({
+            visible: true,
+            type: "error",
+            title: "Authentication Failed",
+            message: "Could not complete Google Login process.",
+          });
         }
       }
     } catch (error) {
-      console.error("Google Auth Error:", error);
-      Alert.alert("Error", "Something went wrong during Google Login.");
+      setModalConfig({
+        visible: true,
+        type: "error",
+        title: "Google Auth Error",
+        message: "Something went wrong during Google Login.",
+      });
     } finally {
       setGoogleLoading(false);
     }
   };
 
-  const handleLogin = async () => {
-    let newErrors = {};
-    if (!formData.email) {
-      newErrors.email = "Email is required";
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = "Invalid email format";
-    }
-
-    if (!formData.password) {
-      newErrors.password = "Password is required";
-    } else if (formData.password.length < 6) {
-      newErrors.password = "Password must be at least 6 characters";
-    }
-
-    if (Object.keys(newErrors).length > 0) {
-      setErrors(newErrors);
-      return;
-    }
-
-    setLoading(true);
-    setErrors({});
-
-    try {
-      const res = await fetch(`${apiUrl}/auth/login`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
-      });
-
-      const data = await res.json();
-      if (data.success) {
-        await SecureStore.setItemAsync("userToken", data.token);
-        await SecureStore.setItemAsync("user", JSON.stringify(data.user));
-
-        if (setUser) setUser(data.user);
-
-        router.replace("/(dashboard)");
-      } else {
-        if (data.notVerified) {
-          Alert.alert("Verify Email", "Please verify your email first.");
-          router.push({
-            pathname: "/(authentication)/verifyotp",
-            params: { email: formData.email },
-          });
-        } else if (data.field) {
-          setErrors({ [data.field]: data.message });
-        } else {
-          setErrors({ general: data.message });
-        }
-      }
-    } catch (err) {
-      console.error("Login Fetch Error:", err);
-      setErrors({ general: "Connection failed. Check your server/IP." });
-    } finally {
-      setLoading(false);
-    }
-  };
-
   return (
-    <SafeAreaView className="flex-1 bg-white/90">
+    <SafeAreaView className="flex-1 bg-white">
       <ScrollView
-        contentContainerStyle={{ flexGrow: 1 }}
-        className="px-6 pt-10"
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ flexGrow: 1, paddingBottom: 40 }}
+        className="px-6 pt-6"
+        keyboardShouldPersistTaps="handled"
       >
-        <View className="mb-10 items-center justify-center">
-          <AppText variant="heading" className="text-4xl">
-            Welcome Back
-          </AppText>
-          <AppText className="text-slate-500 mt-2">
-            Please enter your details to login.
-          </AppText>
+        <View className=" flex-row mt-10 mb-20 items-center justify-between relative">
+          <TouchableOpacity
+            onPress={() => router.back()}
+            activeOpacity={0.8}
+            className="w-10 h-10 rounded-full bg-red-600 items-center justify-center shadow-md shadow-red-300 z-10"
+          >
+            <ArrowLeft size={20} color="#ffffff" />
+          </TouchableOpacity>
+
+          {/* Center App Logo */}
+          <View className="absolute left-0 right-0 items-center justify-center">
+            <Image
+              source={require("../../assets/blood-donation-logo.jpeg")} // <-- Update with your app logo path
+              style={{ width: 90, height: 90, borderRadius: 50 }}
+              resizeMode="contain"
+            />
+          </View>
         </View>
 
-        <View className="space-y-4">
-          <View>
-            <AppText variant="medium" className="mb-2">
-              Email Address
-            </AppText>
-            <View
-              className={`flex-row items-center border rounded-xl px-4 py-3 ${
-                errors.email
-                  ? "border-red-500 bg-red-50"
-                  : "border-slate-200 bg-slate-50"
-              }`}
-            >
-              <Mail size={20} color={errors.email ? "#ef4444" : "#64748b"} />
-              <TextInput
-                className="flex-1 ml-3 text-slate-900 font-inter"
-                style={{ outlineStyle: "none" }}
-                selectionColor="#ef4444"
-                placeholder="name@email.com"
-                value={formData.email}
-                onChangeText={(text) => {
-                  setFormData({ ...formData, email: text });
-                  if (errors.email) setErrors({ ...errors, email: null });
-                }}
-                autoCapitalize="none"
-                keyboardType="email-address"
-              />
-            </View>
-            {errors.email && (
-              <AppText className="text-red-500 text-xs mt-1 ml-1">
-                {errors.email}
-              </AppText>
-            )}
-          </View>
+        <FloatingLabelInput
+          label="Email Address"
+          value={formData.email}
+          onChangeText={(t) => {
+            setFormData((prev) => ({ ...prev, email: t }));
+            if (errors.email) setErrors((prev) => ({ ...prev, email: null }));
+          }}
+          icon={Mail}
+          keyboardType="email-address"
+          error={errors.email}
+        />
 
-          <View className="mt-4">
-            <AppText variant="medium" className="mb-2">
-              Password
-            </AppText>
-            <View
-              className={`flex-row items-center border rounded-xl px-4 py-3 ${
-                errors.password
-                  ? "border-red-500 bg-red-50"
-                  : "border-slate-200 bg-slate-50"
-              }`}
-            >
-              <Lock size={20} color={errors.password ? "#ef4444" : "#64748b"} />
-              <TextInput
-                className="flex-1 ml-3 text-slate-900 font-inter"
-                style={{ outlineStyle: "none" }}
-                selectionColor="#ef4444"
-                placeholder="••••••••"
-                secureTextEntry={!showPassword}
-                value={formData.password}
-                onChangeText={(text) => {
-                  setFormData({ ...formData, password: text });
-                  if (errors.password) setErrors({ ...errors, password: null });
-                }}
-              />
-              <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
-                {showPassword ? (
-                  <EyeOff size={20} color="#64748b" />
-                ) : (
-                  <Eye size={20} color="#64748b" />
-                )}
-              </TouchableOpacity>
-            </View>
-            {errors.password && (
-              <AppText className="text-red-500 text-xs mt-1 ml-1">
-                {errors.password}
-              </AppText>
-            )}
-
-            <TouchableOpacity
-              onPress={() => router.push("/forgotpassword")}
-              style={{ alignSelf: "flex-end" }}
-              className="mt-2"
-            >
-              <AppText
-                style={{ color: "#dc2626" }}
-                className="text-red-600 font-bold text-right"
-              >
-                Forgot Password?
-              </AppText>
-            </TouchableOpacity>
-          </View>
-
-          {errors.general && (
-            <AppText variant="error" className="mt-2 text-center">
-              {errors.general}
-            </AppText>
-          )}
+        <View>
+          <FloatingLabelInput
+            label="Password"
+            value={formData.password}
+            onChangeText={(t) => {
+              setFormData((prev) => ({ ...prev, password: t }));
+              if (errors.password)
+                setErrors((prev) => ({ ...prev, password: null }));
+            }}
+            icon={Lock}
+            secureTextEntry={!showPassword}
+            rightIcon={showPassword ? EyeOff : Eye}
+            onRightIconPress={() => setShowPassword(!showPassword)}
+            error={errors.password}
+          />
 
           <TouchableOpacity
-            onPress={handleLogin}
-            disabled={loading}
-            className="w-full bg-red-600 h-14 rounded-2xl items-center justify-center mt-8 shadow-lg shadow-red-200"
+            onPress={() => router.push("/forgotpassword")}
+            className="-mt-3 mb-6 align-self-end"
+            style={{ alignSelf: "flex-end" }}
           >
-            {loading ? (
-              <ActivityIndicator color="white" />
-            ) : (
-              <AppText className="text-white font-bold text-lg">Login</AppText>
-            )}
+            <AppText variant="bold" className="text-red-600 text-sm">
+              Forgot Password?
+            </AppText>
           </TouchableOpacity>
         </View>
 
-        <View className="flex-row items-center my-8">
-          <View className="flex-1 h-[1px] bg-slate-200" />
-          <AppText className="px-4 text-slate-400 text-sm uppercase tracking-widest">
-            Or register with
+        <GradientButton title="Log In" onPress={handleLogin} />
+
+        <View className="flex-row items-center my-6">
+          <View className="flex-1 h-[1px] bg-slate-100" />
+          <AppText className="px-4 text-slate-400 text-xs uppercase tracking-widest font-bold">
+            Or Login With
           </AppText>
-          <View className="flex-1 h-[1px] bg-slate-200" />
+          <View className="flex-1 h-[1px] bg-slate-100" />
         </View>
 
-        {/* Google Authentication Button */}
         <TouchableOpacity
-          disabled={googleLoading}
-          className="w-full flex-row items-center justify-center h-14 border border-slate-200 rounded-2xl mb-6 bg-white"
+          activeOpacity={0.8}
           onPress={handleGoogleLogin}
+          disabled={googleLoading}
+          className="w-full flex-row items-center justify-center h-16 border-2 border-slate-100 rounded-[30px] bg-slate-50/50 mb-8"
         >
-          {googleLoading ? (
-            <ActivityIndicator color="#DB4437" />
-          ) : (
-            <>
-              <UserRoundCheck size={22} color="#DB4437" />
-              <AppText variant="medium" className="ml-3">
-                Google
-              </AppText>
-            </>
-          )}
+          <UserCheck size={22} color="#dc2626" />
+          <AppText variant="bold" className="ml-3 text-slate-700 text-base">
+            Continue with Google
+          </AppText>
         </TouchableOpacity>
 
-        <View className="flex-row justify-center mt-auto pb-10">
-          <AppText>Don't have an account? </AppText>
+        <View className="flex-row justify-center items-center">
+          <AppText variant="medium" className="text-slate-500">
+            Don't have an account?{" "}
+          </AppText>
           <TouchableOpacity
             onPress={() => router.push("/(authentication)/signup")}
           >
-            <AppText className="text-red-600 font-bold underline">
+            <AppText variant="black" className="text-red-600 underline">
               Create Account
             </AppText>
           </TouchableOpacity>
         </View>
       </ScrollView>
+
+      <LoadingOverlay
+        visible={loading || googleLoading}
+        message={googleLoading ? "Connecting Google..." : "Logging in..."}
+      />
+
+      <StatusModal
+        visible={modalConfig.visible}
+        type={modalConfig.type}
+        title={modalConfig.title}
+        message={modalConfig.message}
+        onClose={closeModal}
+      />
     </SafeAreaView>
   );
 }

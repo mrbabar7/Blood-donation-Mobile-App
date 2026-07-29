@@ -1,602 +1,838 @@
-// import React, { useState, useEffect } from "react";
-// import {
-//   View,
-//   Text,
-//   TextInput,
-//   TouchableOpacity,
-//   ScrollView,
-//   Alert,
-//   Switch,
-//   ActivityIndicator,
-//   RefreshControl,
-// } from "react-native";
-// import {
-//   User,
-//   Droplet,
-//   MapPin,
-//   Edit3,
-//   Save,
-//   Power,
-//   Hash,
-//   Globe,
-//   Eye,
-//   EyeOff,
-//   Trash2,
-//   AlertTriangle,
-//   Loader2,
-// } from "lucide-react-native";
-// import { useRouter } from "expo-router";
-
-// // IMPORTANT: Replace with your actual local IP or production URL
-// const API_URL = process.env.EXPO_PUBLIC_API_URL;
-
-// export default function ProfileScreen() {
-//   const router = useRouter();
-
-//   // --- STATES ---
-//   const [loading, setLoading] = useState(true);
-//   const [saving, setSaving] = useState(false);
-//   const [isProfileExist, setIsProfileExist] = useState(false);
-//   const [isEditMode, setIsEditMode] = useState(false);
-//   const [userData, setUserData] = useState(null);
-
-//   // --- FETCH DATA (Logic from your Web Code) ---
-//   const fetchProfile = async () => {
-//     try {
-//       const response = await fetch(`${API_URL}/api/donors/status`, {
-//         method: "GET",
-//         // Credentials handle cookies/sessions like your web code
-//         headers: { "Content-Type": "application/json" },
-//       });
-
-//       const data = await response.json();
-
-//       if (data.registered) {
-//         setIsProfileExist(true);
-//         setUserData(data.donor);
-//       } else {
-//         setIsProfileExist(false);
-//       }
-//     } catch (err) {
-//       console.error("Failed to fetch profile:", err);
-//       Alert.alert("Error", "Could not connect to the server.");
-//     } finally {
-//       setLoading(false);
-//     }
-//   };
-
-//   useEffect(() => {
-//     fetchProfile();
-//   }, []);
-
-//   // --- SAVE/UPDATE LOGIC ---
-//   const handleSave = async () => {
-//     if (!isEditMode) {
-//       setIsEditMode(true);
-//       return;
-//     }
-
-//     setSaving(true);
-//     try {
-//       const response = await fetch(`${API_URL}/api/donors/update-profile`, {
-//         method: "PUT",
-//         headers: { "Content-Type": "application/json" },
-//         body: JSON.stringify(userData),
-//       });
-
-//       if (response.ok) {
-//         const data = await response.json();
-//         setUserData(data.donor);
-//         setIsEditMode(false);
-//         Alert.alert("Success", "Profile updated successfully!");
-//       } else {
-//         Alert.alert("Update Failed", "Please check your inputs.");
-//       }
-//     } catch (err) {
-//       Alert.alert("Error", "Failed to update profile.");
-//     } finally {
-//       setSaving(false);
-//     }
-//   };
-
-//   // --- DELETE LOGIC ---
-//   const handleDeleteProfile = () => {
-//     Alert.alert(
-//       "PERMANENT DELETE",
-//       "This will remove you from the donor list. Continue?",
-//       [
-//         { text: "Cancel", style: "cancel" },
-//         {
-//           text: "Yes, Delete",
-//           style: "destructive",
-//           onPress: async () => {
-//             try {
-//               const response = await fetch(
-//                 `${API_URL}/api/donors/delete-profile`,
-//                 {
-//                   method: "DELETE",
-//                 },
-//               );
-//               if (response.ok) {
-//                 setIsProfileExist(false);
-//                 setUserData(null);
-//                 Alert.alert("Deleted", "Donor profile removed.");
-//               }
-//             } catch (err) {
-//               Alert.alert("Error", "Failed to delete profile.");
-//             }
-//           },
-//         },
-//       ],
-//     );
-//   };
-
-//   // --- RENDERING ---
-
-//   if (loading) {
-//     return (
-//       <View className="flex-1 justify-center items-center bg-white">
-//         <ActivityIndicator size="large" color="#991b1b" />
-//         <Text className="mt-4 text-gray-400 font-bold uppercase text-[10px] tracking-widest">
-//           Loading Donor Data...
-//         </Text>
-//       </View>
-//     );
-//   }
-
-//   // If user is not registered as a donor, show the Donor Registration logic
-//   if (!isProfileExist) {
-//     return (
-//       <View className="flex-1 justify-center items-center p-10 bg-white">
-//         <View className="w-20 h-20 bg-red-50 rounded-full items-center justify-center mb-4">
-//           <Droplet size={40} color="#991b1b" />
-//         </View>
-//         <Text className="text-xl font-black text-gray-800 uppercase text-center">
-//           Not a Donor
-//         </Text>
-//         <Text className="text-gray-500 text-center mt-2 mb-8 font-medium">
-//           Register now to show up in search results and help people in need.
-//         </Text>
-//         <TouchableOpacity
-//           onPress={() => setIsProfileExist(true)} // Or navigate to a real DonorForm
-//           className="bg-red-800 px-10 py-4 rounded-2xl shadow-lg shadow-red-200"
-//         >
-//           <Text className="text-white font-black uppercase tracking-widest text-xs">
-//             Register Now
-//           </Text>
-//         </TouchableOpacity>
-//       </View>
-//     );
-//   }
-
-//   return (
-//     <View className="flex-1 bg-gray-50">
-//       <ScrollView
-//         className="flex-1 px-5 pt-6"
-//         showsVerticalScrollIndicator={false}
-//         refreshControl={
-//           <RefreshControl refreshing={loading} onRefresh={fetchProfile} />
-//         }
-//       >
-//         {/* Header */}
-//         <View className="flex-row justify-between items-center mb-8">
-//           <View>
-//             <Text className="text-2xl font-black text-gray-800 uppercase">
-//               Profile
-//             </Text>
-//             <Text className="text-red-800 font-bold text-[10px] uppercase tracking-widest">
-//               Verified Donor
-//             </Text>
-//           </View>
-//           <TouchableOpacity
-//             onPress={() => router.replace("/login")}
-//             className="w-10 h-10 bg-white rounded-full items-center justify-center border border-gray-100 shadow-sm"
-//           >
-//             <Power size={18} color="#374151" />
-//           </TouchableOpacity>
-//         </View>
-
-//         {/* Visibility Card */}
-//         <View className="bg-white px-5 py-4 rounded-3xl mb-6 flex-row items-center justify-between border border-gray-100 shadow-sm">
-//           <View className="flex-row items-center">
-//             <View
-//               className={`p-2 rounded-xl ${userData?.isAvailable ? "bg-emerald-50" : "bg-gray-100"}`}
-//             >
-//               {userData?.isAvailable ? (
-//                 <Eye size={18} color="#059669" />
-//               ) : (
-//                 <EyeOff size={18} color="#9ca3af" />
-//               )}
-//             </View>
-//             <View className="ml-3">
-//               <Text className="text-gray-800 font-bold text-sm">
-//                 Active Status
-//               </Text>
-//               <Text className="text-gray-400 text-[9px] uppercase font-bold">
-//                 {userData?.isAvailable ? "Searchable" : "Hidden"}
-//               </Text>
-//             </View>
-//           </View>
-//           <Switch
-//             value={userData?.isAvailable}
-//             onValueChange={(val) =>
-//               setUserData({ ...userData, isAvailable: val })
-//             }
-//             disabled={!isEditMode}
-//             trackColor={{ false: "#d1d5db", true: "#059669" }}
-//           />
-//         </View>
-
-//         {/* Details Section */}
-//         <View className="bg-white p-6 rounded-[35px] shadow-sm border border-gray-100 mb-6">
-//           <InputGroup
-//             label="Full Name"
-//             value={userData?.fullName}
-//             icon={<User size={16} color="#9ca3af" />}
-//             isEdit={isEditMode}
-//             onChange={(t) => setUserData({ ...userData, fullName: t })}
-//           />
-//           <InputGroup
-//             label="Blood Type"
-//             value={userData?.bloodType}
-//             icon={<Droplet size={16} color="#991b1b" />}
-//             isEdit={isEditMode}
-//             isRed
-//             onChange={(t) => setUserData({ ...userData, bloodType: t })}
-//           />
-//           <InputGroup
-//             label="District"
-//             value={userData?.district}
-//             icon={<MapPin size={16} color="#9ca3af" />}
-//             isEdit={isEditMode}
-//             onChange={(t) => setUserData({ ...userData, district: t })}
-//           />
-//           <InputGroup
-//             label="Mobile"
-//             value={userData?.mobileNumber}
-//             icon={<Globe size={16} color="#9ca3af" />}
-//             isEdit={isEditMode}
-//             type="phone-pad"
-//             onChange={(t) => setUserData({ ...userData, mobileNumber: t })}
-//           />
-
-//           <TouchableOpacity
-//             onPress={handleSave}
-//             disabled={saving}
-//             className={`${isEditMode ? "bg-emerald-600" : "bg-red-800"} flex-row items-center justify-center py-4 rounded-2xl mt-4 shadow-lg`}
-//           >
-//             {saving ? (
-//               <ActivityIndicator color="white" size="small" />
-//             ) : (
-//               <>
-//                 {isEditMode ? (
-//                   <Save size={18} color="white" />
-//                 ) : (
-//                   <Edit3 size={18} color="white" />
-//                 )}
-//                 <Text className="text-white font-bold ml-2 uppercase tracking-tighter">
-//                   {isEditMode ? "Save Changes" : "Edit Profile"}
-//                 </Text>
-//               </>
-//             )}
-//           </TouchableOpacity>
-//         </View>
-
-//         {/* Danger Zone */}
-//         <View className="mb-10 px-2">
-//           <View className="flex-row items-center mb-3">
-//             <AlertTriangle size={14} color="#dc2626" />
-//             <Text className="text-red-600 font-bold text-[10px] uppercase ml-1">
-//               Danger Zone
-//             </Text>
-//           </View>
-//           <TouchableOpacity
-//             onPress={handleDeleteProfile}
-//             className="bg-red-50 border border-red-100 py-4 rounded-2xl flex-row items-center justify-center"
-//           >
-//             <Trash2 size={16} color="#dc2626" />
-//             <Text className="text-red-600 font-bold ml-2 uppercase text-[11px]">
-//               Delete Permanently
-//             </Text>
-//           </TouchableOpacity>
-//         </View>
-//       </ScrollView>
-//     </View>
-//   );
-// }
-
-// // Helper Component for inputs
-// const InputGroup = ({
-//   label,
-//   value,
-//   icon,
-//   isEdit,
-//   onChange,
-//   isRed,
-//   type = "default",
-// }) => (
-//   <View className="mb-5">
-//     <Text className="text-gray-400 text-[10px] font-black uppercase mb-2 ml-1 tracking-widest">
-//       {label}
-//     </Text>
-//     <View
-//       className={`flex-row items-center px-4 py-3 rounded-2xl border ${isEdit ? "bg-white border-red-200 shadow-sm" : "bg-gray-50 border-transparent"}`}
-//     >
-//       {icon}
-//       <TextInput
-//         className={`flex-1 ml-3 font-bold text-sm ${isRed ? "text-red-800" : "text-gray-800"}`}
-//         value={value}
-//         editable={isEdit}
-//         keyboardType={type}
-//         onChangeText={onChange}
-//       />
-//     </View>
-//   </View>
-// );
 import React, { useState, useEffect } from "react";
 import {
   View,
-  Text,
-  TextInput,
-  TouchableOpacity,
   ScrollView,
-  Alert,
-  Switch,
+  TouchableOpacity,
+  TextInput,
   ActivityIndicator,
-  RefreshControl,
+  Modal,
+  Image,
+  Switch,
 } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
+import { useRouter } from "expo-router";
 import {
-  User,
-  Droplet,
   MapPin,
-  Edit3,
+  Phone,
+  User,
+  Calendar,
+  Edit2,
   Save,
-  Power,
-  Hash,
-  Globe,
-  Eye,
-  EyeOff,
+  Star,
+  Heart,
+  Droplet,
+  ShieldCheck,
+  CheckCircle2,
   Trash2,
   AlertTriangle,
+  Sparkles,
+  ArrowRight,
+  Award,
+  XCircle,
+  ChevronDown,
+  Users,
 } from "lucide-react-native";
-import { useRouter } from "expo-router";
 
-// --- IMPORTANT: Import your DonorForm component here ---
-// import DonorForm from "./DonorForm";
-import RegisterDonor from "../components/donorForm";
-const API_URL = process.env.EXPO_PUBLIC_API_URL;
+import AppText from "../../components/AppText";
+import SelectionModal from "../../components/SelectionModal";
+import { useDonor } from "../../context/DonorContext";
+import {
+  PAKISTAN_LOCATIONS,
+  BLOOD_GROUPS,
+} from "../../constants/pakistanLocations";
+
+const MALE_AVATAR = "https://cdn-icons-png.flaticon.com/128/17002/17002124.png";
+const FEMALE_AVATAR =
+  "https://cdn-icons-png.flaticon.com/128/17002/17002124.png";
+
+const GENDER_OPTIONS = ["Male", "Female", "Other"];
 
 export default function ProfileScreen() {
   const router = useRouter();
+  const {
+    donorProfile,
+    loading,
+    updateDonorProfileAPI,
+    deleteDonorProfileAPI,
+  } = useDonor();
 
-  const [loading, setLoading] = useState(true);
+  const [isEditing, setIsEditing] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [isProfileExist, setIsProfileExist] = useState(false);
-  const [showRegistrationForm, setShowRegistrationForm] = useState(false); // <--- New State
-  const [isEditMode, setIsEditMode] = useState(false);
-  const [userData, setUserData] = useState(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [deleteModalShow, setDeleteModalShow] = useState(false);
+  const [formData, setFormData] = useState(null);
 
-  const fetchProfile = async () => {
-    try {
-      const response = await fetch(`${API_URL}/api/donors/status`);
-      const data = await response.json();
+  // Status Notification Modal State
+  const [feedbackModal, setFeedbackModal] = useState({
+    visible: false,
+    type: "success", // 'success' | 'error'
+    title: "",
+    message: "",
+  });
 
-      if (data.registered) {
-        setIsProfileExist(true);
-        setUserData(data.donor);
-        setShowRegistrationForm(false);
-      } else {
-        setIsProfileExist(false);
-      }
-    } catch (err) {
-      console.error("Fetch error:", err);
-    } finally {
-      setLoading(false);
-    }
-  };
+  // Modal Selection State
+  const [activeModal, setActiveModal] = useState(null); // 'bloodType' | 'province' | 'city' | 'gender'
 
   useEffect(() => {
-    fetchProfile();
-  }, []);
+    if (donorProfile) {
+      setFormData(donorProfile);
+    }
+  }, [donorProfile]);
+
+  // Available Provinces array from PAKISTAN_LOCATIONS object keys
+  const availableProvinces = Object.keys(PAKISTAN_LOCATIONS || {});
+
+  // Available Cities based on currently selected province
+  const availableCities =
+    formData?.province && PAKISTAN_LOCATIONS[formData.province]
+      ? PAKISTAN_LOCATIONS[formData.province]
+      : [];
+
+  // Check if current selected city is valid for the selected province
+  const isCityValidForProvince = () => {
+    if (!formData?.province || !formData?.district) return false;
+    const citiesInProvince = PAKISTAN_LOCATIONS[formData.province] || [];
+    return citiesInProvince.includes(formData.district);
+  };
+
+  // Check if form data has actually been modified
+  const isFormChanged = () => {
+    if (!formData || !donorProfile) return false;
+    return JSON.stringify(formData) !== JSON.stringify(donorProfile);
+  };
+
+  const showNotification = (type, title, message) => {
+    setFeedbackModal({ visible: true, type, title, message });
+  };
+
+  const calculateDaysLeft = (targetDate) => {
+    if (!targetDate) return 0;
+    const diff = new Date(targetDate) - new Date();
+    const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
+    return days > 0 ? days : 0;
+  };
+
+  const handleFieldChange = (field, value) => {
+    setFormData((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
+  };
+
+  const handleCancel = () => {
+    setFormData(donorProfile);
+    setIsEditing(false);
+  };
 
   const handleSave = async () => {
-    if (!isEditMode) {
-      setIsEditMode(true);
+    // Province & City Validation
+    if (!isCityValidForProvince()) {
+      showNotification(
+        "error",
+        "Invalid City Selected",
+        `Please select a valid city from ${formData.province || "the selected province"} before saving.`,
+      );
       return;
     }
+
     setSaving(true);
-    try {
-      const response = await fetch(`${API_URL}/api/donors/update-profile`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(userData),
-      });
-      if (response.ok) {
-        setIsEditMode(false);
-        Alert.alert("Success", "Profile Updated");
-      }
-    } catch (err) {
-      Alert.alert("Error", "Update Failed");
-    } finally {
-      setSaving(false);
+    const result = await updateDonorProfileAPI(formData);
+    setSaving(false);
+
+    if (result.success) {
+      setIsEditing(false);
+      showNotification(
+        "success",
+        "Profile Updated",
+        "Your donor profile details have been saved successfully!",
+      );
+    } else {
+      showNotification(
+        "error",
+        "Update Failed",
+        result.message || "Failed to update profile.",
+      );
     }
   };
 
-  // --- RENDERING LOGIC ---
+  const handleDeleteProfile = async () => {
+    setDeleteLoading(true);
+    const result = await deleteDonorProfileAPI();
+    setDeleteLoading(false);
+    setDeleteModalShow(false);
 
-  // 1. Loading State
+    if (result.success) {
+      showNotification(
+        "success",
+        "Profile Deleted",
+        "Your donor profile has been permanently removed.",
+      );
+    } else {
+      showNotification(
+        "error",
+        "Deletion Failed",
+        result.message || "Failed to delete profile.",
+      );
+    }
+  };
+
   if (loading) {
     return (
-      <View className="flex-1 justify-center items-center bg-white">
-        <ActivityIndicator size="large" color="#991b1b" />
-      </View>
-    );
-  }
-
-  // 2. Registration Form State (If user is not a donor and clicked "Register Now")
-  if (!isProfileExist && showRegistrationForm) {
-    return (
-      <View className="flex-1 bg-white">
-        <RegisterDonor></RegisterDonor>
-      </View>
-    );
-  }
-
-  // 3. Not Registered Placeholder
-  if (!isProfileExist) {
-    return (
-      <View className="flex-1 justify-center items-center p-10 bg-white">
-        <View className="w-20 h-20 bg-red-50 rounded-full items-center justify-center mb-4">
-          <Droplet size={40} color="#991b1b" />
-        </View>
-        <Text className="text-xl font-black text-gray-800 uppercase text-center">
-          Not a Donor
-        </Text>
-        <Text className="text-gray-500 text-center mt-2 mb-8 font-medium">
-          You haven't registered as a donor yet. Join us to help save lives!
-        </Text>
-        <TouchableOpacity
-          onPress={() => setShowRegistrationForm(true)} // <--- Changes state to show form
-          className="bg-red-800 px-10 py-4 rounded-2xl shadow-lg"
+      <View className="flex-1 items-center justify-center bg-slate-50">
+        <ActivityIndicator size="large" color="#dc2626" />
+        <AppText
+          variant="bold"
+          className="text-xs text-slate-400 uppercase tracking-widest mt-4"
         >
-          <Text className="text-white font-black uppercase tracking-widest text-xs">
-            Register Now
-          </Text>
-        </TouchableOpacity>
+          Loading Profile Data...
+        </AppText>
       </View>
     );
   }
 
-  // 4. Registered Donor Profile View
-  return (
-    <View className="flex-1 bg-gray-50">
+  // UNREGISTERED CASE
+  if (!donorProfile) {
+    return (
       <ScrollView
-        className="flex-1 px-5 pt-6"
         showsVerticalScrollIndicator={false}
-        refreshControl={
-          <RefreshControl refreshing={loading} onRefresh={fetchProfile} />
-        }
+        className="flex-1 bg-slate-50"
+        contentContainerStyle={{ paddingBottom: 60 }}
       >
-        <View className="flex-row justify-between items-center mb-8">
-          <View>
-            <Text className="text-2xl font-black text-gray-800 uppercase">
-              My Profile
-            </Text>
-            <Text className="text-red-800 font-bold text-[10px] uppercase tracking-widest">
-              Active Donor
-            </Text>
+        <View className="px-5 pt-6 space-y-6">
+          <View className="bg-white rounded-3xl p-6 border border-slate-100 shadow-md items-center overflow-hidden relative">
+            <View className="w-full h-44 rounded-2xl overflow-hidden mb-5 bg-red-50 relative">
+              <Image
+                source={{
+                  uri: "https://images.unsplash.com/photo-1615461066841-6116e61058f4?auto=format&fit=crop&w=800&q=80",
+                }}
+                className="w-full h-full"
+                resizeMode="cover"
+              />
+              <LinearGradient
+                colors={["transparent", "rgba(0,0,0,0.6)"]}
+                className="absolute inset-0 justify-end p-4"
+              >
+                <View className="flex-row items-center">
+                  <Sparkles size={16} color="#fca5a5" />
+                  <AppText
+                    variant="bold"
+                    className="text-white text-xs uppercase tracking-widest ml-1.5"
+                  >
+                    Be A Lifesaver
+                  </AppText>
+                </View>
+              </LinearGradient>
+            </View>
+
+            <AppText
+              variant="black"
+              className="text-2xl text-slate-900 text-center leading-tight mb-2"
+            >
+              You're Not Registered as a Blood Donor Yet
+            </AppText>
+
+            <AppText
+              variant="medium"
+              className="text-slate-500 text-sm text-center leading-6 mb-6"
+            >
+              Every single donation can save up to 3 lives. Join our verified
+              network of emergency blood donors across Pakistan and become a
+              hero in your local community today.
+            </AppText>
+
+            <TouchableOpacity
+              onPress={() =>
+                router.push({
+                  pathname: "/(registration)/donor-registration",
+                  params: { from: "profile" },
+                })
+              }
+              activeOpacity={0.85}
+              className="w-full h-14 rounded-[30px] overflow-hidden shadow-lg shadow-red-300"
+            >
+              <LinearGradient
+                colors={["#dc2626", "#991b1b"]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                className="w-full h-full flex-row items-center justify-center px-6"
+              >
+                <AppText
+                  variant="black"
+                  className="text-white text-base uppercase tracking-widest mr-2"
+                >
+                  Register as Donor Now
+                </AppText>
+                <ArrowRight size={18} color="white" />
+              </LinearGradient>
+            </TouchableOpacity>
           </View>
-          <TouchableOpacity
-            onPress={() => router.replace("/login")}
-            className="p-3 bg-white rounded-full border border-gray-100 shadow-sm"
-          >
-            <Power size={18} color="#374151" />
-          </TouchableOpacity>
+        </View>
+      </ScrollView>
+    );
+  }
+
+  // REGISTERED DONOR CASE
+  const daysLeft = calculateDaysLeft(formData?.nextAvailableDate);
+  const isLocked = daysLeft > 0;
+  const hasChanges = isFormChanged();
+
+  return (
+    <View className="flex-1 bg-slate-50">
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        className="flex-1 px-5 pt-5"
+        contentContainerStyle={{ paddingBottom: 60 }}
+      >
+        {/* Profile Card Header */}
+        <View className="bg-white rounded-3xl p-5 border border-slate-100 shadow-sm mb-4">
+          <View className="items-center mb-4">
+            <View
+              className={`w-28 h-28 rounded-full border-4 border-white shadow-md overflow-hidden items-center justify-center mb-3 ${
+                formData?.gender === "Female" ? "bg-rose-100" : "bg-sky-100"
+              }`}
+            >
+              {formData?.profilePicture ? (
+                <Image
+                  source={{ uri: formData.profilePicture }}
+                  className="w-full h-full"
+                />
+              ) : (
+                <Image
+                  source={{
+                    uri:
+                      formData?.gender === "Female"
+                        ? FEMALE_AVATAR
+                        : MALE_AVATAR,
+                  }}
+                  className="w-20 h-20"
+                />
+              )}
+            </View>
+
+            <View className="flex-row items-center mb-1">
+              <AppText
+                variant="black"
+                className="text-xl text-slate-900 uppercase tracking-tight mr-1.5"
+              >
+                {formData?.fullName || "Donor"}
+              </AppText>
+              <ShieldCheck size={20} color="#3b82f6" />
+            </View>
+
+            <View className="flex-row items-center gap-3 mt-1">
+              <View className="flex-row items-center">
+                <MapPin size={14} color="#dc2626" />
+                <AppText variant="bold" className="text-xs text-slate-400 ml-1">
+                  {formData?.district || "N/A"}, {formData?.province || "N/A"}
+                </AppText>
+              </View>
+              <View className="flex-row items-center">
+                <Phone size={14} color="#10b981" />
+                <AppText variant="bold" className="text-xs text-slate-400 ml-1">
+                  {formData?.mobileNumber}
+                </AppText>
+              </View>
+            </View>
+          </View>
         </View>
 
-        {/* Visibility Switch */}
-        <View className="bg-white px-5 py-4 rounded-3xl mb-6 flex-row items-center justify-between border border-gray-100 shadow-sm">
-          <View className="flex-row items-center">
-            {userData?.isAvailable ? (
-              <Eye size={18} color="#059669" />
-            ) : (
-              <EyeOff size={18} color="#9ca3af" />
-            )}
-            <Text className="text-gray-800 font-bold text-sm ml-3">
-              Search Visibility
-            </Text>
-          </View>
-          <Switch
-            value={userData?.isAvailable}
-            onValueChange={(val) =>
-              setUserData({ ...userData, isAvailable: val })
-            }
-            disabled={!isEditMode}
-            trackColor={{ false: "#d1d5db", true: "#059669" }}
+        {/* Stats Grid */}
+        <View className="flex-row flex-wrap justify-between mb-4">
+          <StatCard
+            icon={<Heart size={18} color="white" />}
+            label="LIVES SAVED"
+            value={formData?.livesSaved ?? 0}
+            colors={["#dc2626", "#991b1b"]}
+          />
+          <StatCard
+            icon={<Star size={18} color="white" />}
+            label="RATING"
+            value={formData?.rating ?? "5.0"}
+            colors={["#1e293b", "#0f172a"]}
+          />
+          <StatCard
+            icon={<Calendar size={18} color="white" />}
+            label="RECOVERY"
+            value={isLocked ? `${daysLeft} Days` : "Ready"}
+            colors={["#ef4444", "#dc2626"]}
+          />
+          <StatCard
+            icon={<Droplet size={18} color="white" />}
+            label="BLOOD TYPE"
+            value={formData?.bloodType || "N/A"}
+            colors={["#18181b", "#09090b"]}
           />
         </View>
 
-        {/* Profile Details Card */}
-        <View className="bg-white p-6 rounded-[35px] shadow-sm border border-gray-100 mb-6">
+        {/* Edit Data Section */}
+        <View className="bg-white rounded-3xl p-5 border border-slate-100 shadow-sm mb-4 space-y-3">
+          {/* Header Row with Wrap Support to Prevent Overflow */}
+          <View className="flex-row justify-between items-center mb-2 flex-wrap gap-y-2">
+            <View className="flex-row items-center">
+              <View className="w-1.5 h-6 bg-red-600 rounded-full mr-2" />
+              <AppText
+                variant="black"
+                className="text-slate-900 text-base uppercase"
+              >
+                Profile Information
+              </AppText>
+            </View>
+
+            {/* Action Buttons: Edit / Cancel / Save */}
+            {!isEditing ? (
+              <TouchableOpacity
+                onPress={() => setIsEditing(true)}
+                className="flex-row items-center px-4 py-2 rounded-2xl bg-slate-900"
+              >
+                <Edit2 size={14} color="white" />
+                <AppText
+                  variant="bold"
+                  className="text-white text-xs uppercase ml-1.5"
+                >
+                  Edit
+                </AppText>
+              </TouchableOpacity>
+            ) : (
+              <View className="flex-row items-center gap-2">
+                <TouchableOpacity
+                  onPress={handleCancel}
+                  className="px-3.5 py-2 rounded-2xl bg-slate-100 border border-slate-200"
+                >
+                  <AppText
+                    variant="bold"
+                    className="text-slate-600 text-xs uppercase"
+                  >
+                    Cancel
+                  </AppText>
+                </TouchableOpacity>
+
+                {hasChanges && (
+                  <TouchableOpacity
+                    onPress={handleSave}
+                    disabled={saving}
+                    className="flex-row items-center px-4 py-2 rounded-2xl bg-emerald-600"
+                  >
+                    {saving ? (
+                      <ActivityIndicator size="small" color="white" />
+                    ) : (
+                      <Save size={14} color="white" />
+                    )}
+                    <AppText
+                      variant="bold"
+                      className="text-white text-xs uppercase ml-1.5"
+                    >
+                      {saving ? "Saving..." : "Save"}
+                    </AppText>
+                  </TouchableOpacity>
+                )}
+              </View>
+            )}
+          </View>
+
           <InputGroup
             label="Full Name"
-            value={userData?.fullName}
-            icon={<User size={16} color="#9ca3af" />}
-            isEdit={isEditMode}
-            onChange={(t) => setUserData({ ...userData, fullName: t })}
-          />
-          <InputGroup
-            label="Blood Group"
-            value={userData?.bloodType}
-            icon={<Droplet size={16} color="#991b1b" />}
-            isEdit={isEditMode}
-            isRed
-            onChange={(t) => setUserData({ ...userData, bloodType: t })}
-          />
-          <InputGroup
-            label="District"
-            value={userData?.district}
-            icon={<MapPin size={16} color="#9ca3af" />}
-            isEdit={isEditMode}
-            onChange={(t) => setUserData({ ...userData, district: t })}
+            icon={User}
+            value={formData?.fullName}
+            isEditing={isEditing}
+            onChangeText={(v) => handleFieldChange("fullName", v)}
           />
 
-          <TouchableOpacity
-            onPress={handleSave}
-            disabled={saving}
-            className={`${isEditMode ? "bg-emerald-600" : "bg-red-800"} flex-row items-center justify-center py-4 rounded-2xl mt-4 shadow-lg`}
-          >
-            {saving ? (
-              <ActivityIndicator color="white" size="small" />
-            ) : (
-              <>
-                {isEditMode ? (
-                  <Save size={18} color="white" />
-                ) : (
-                  <Edit3 size={18} color="white" />
-                )}
-                <Text className="text-white font-bold ml-2 uppercase tracking-tighter">
-                  {isEditMode ? "Save Changes" : "Edit Profile"}
-                </Text>
-              </>
-            )}
-          </TouchableOpacity>
+          {/* Gender Select Field */}
+          <SelectGroup
+            label="Gender"
+            icon={Users}
+            value={formData?.gender || "Select Gender"}
+            isEditing={isEditing}
+            onPress={() => isEditing && setActiveModal("gender")}
+          />
+
+          {/* Blood Group Select Component */}
+          <SelectGroup
+            label="Blood Group"
+            icon={Droplet}
+            value={formData?.bloodType || "Select Blood Group"}
+            isEditing={isEditing}
+            onPress={() => isEditing && setActiveModal("bloodType")}
+          />
+
+          <InputGroup
+            label="Age"
+            icon={Calendar}
+            value={formData?.age?.toString()}
+            keyboardType="numeric"
+            isEditing={isEditing}
+            onChangeText={(v) => handleFieldChange("age", v)}
+          />
+
+          <InputGroup
+            label="Phone Number"
+            icon={Phone}
+            value={formData?.mobileNumber}
+            keyboardType="phone-pad"
+            isEditing={isEditing}
+            onChangeText={(v) => handleFieldChange("mobileNumber", v)}
+          />
+
+          {/* Province Select Component */}
+          <SelectGroup
+            label="Province"
+            icon={MapPin}
+            value={formData?.province || "Select Province"}
+            isEditing={isEditing}
+            onPress={() => isEditing && setActiveModal("province")}
+          />
+
+          {/* City / District Select Component */}
+          <SelectGroup
+            label="City / District"
+            icon={MapPin}
+            value={formData?.district || "Select City"}
+            isEditing={isEditing}
+            onPress={() => {
+              if (!isEditing) return;
+              if (!formData?.province) {
+                showNotification(
+                  "error",
+                  "Select Province First",
+                  "Please select a province before picking a city.",
+                );
+                return;
+              }
+              setActiveModal("city");
+            }}
+          />
+
+          {/* Search Visibility Toggle */}
+          <View className="pt-2">
+            <AppText
+              variant="bold"
+              className="text-[10px] uppercase tracking-widest text-slate-400 mb-1.5 ml-1"
+            >
+              Search Visibility Status
+            </AppText>
+            <View
+              className={`flex-row items-center justify-between p-4 rounded-2xl border ${
+                formData?.isAvailable
+                  ? "bg-emerald-50/50 border-emerald-100"
+                  : "bg-slate-50 border-slate-200"
+              }`}
+            >
+              <View>
+                <AppText
+                  variant="bold"
+                  className={`text-sm ${
+                    formData?.isAvailable
+                      ? "text-emerald-700"
+                      : "text-slate-500"
+                  }`}
+                >
+                  {isLocked
+                    ? "Recovering"
+                    : formData?.isAvailable
+                      ? "Publicly Searchable"
+                      : "Hidden from Search"}
+                </AppText>
+                <AppText
+                  variant="medium"
+                  className="text-slate-400 text-xs mt-0.5"
+                >
+                  {formData?.isAvailable
+                    ? "You will appear in urgent blood searches"
+                    : "You are currently hidden from search results"}
+                </AppText>
+              </View>
+
+              <Switch
+                value={formData?.isAvailable}
+                disabled={!isEditing || isLocked}
+                onValueChange={(val) => handleFieldChange("isAvailable", val)}
+                trackColor={{ false: "#cbd5e1", true: "#10b981" }}
+                thumbColor="#ffffff"
+              />
+            </View>
+          </View>
         </View>
 
         {/* Danger Zone */}
-        <View className="mb-10 px-2">
+        <View className="bg-red-50/70 rounded-3xl p-5 border border-red-100 mt-2 mb-6">
+          <View className="flex-row items-center mb-3">
+            <View className="p-2.5 bg-red-100 rounded-2xl mr-3">
+              <AlertTriangle size={22} color="#dc2626" />
+            </View>
+            <View className="flex-1">
+              <AppText
+                variant="black"
+                className="text-slate-900 text-base uppercase"
+              >
+                Danger Zone
+              </AppText>
+              <AppText variant="medium" className="text-slate-500 text-xs">
+                Deleting your donor profile is permanent.
+              </AppText>
+            </View>
+          </View>
+
           <TouchableOpacity
-            onPress={() => {
-              /* Add Delete Logic */
-            }}
-            className="bg-red-50 border border-red-100 py-4 rounded-2xl flex-row items-center justify-center"
+            onPress={() => setDeleteModalShow(true)}
+            className="w-full bg-white border border-red-200 h-12 rounded-2xl flex-row items-center justify-center"
           >
             <Trash2 size={16} color="#dc2626" />
-            <Text className="text-red-600 font-bold ml-2 uppercase text-[11px]">
+            <AppText
+              variant="bold"
+              className="text-red-600 text-xs uppercase tracking-widest ml-2"
+            >
               Delete Donor Profile
-            </Text>
+            </AppText>
           </TouchableOpacity>
         </View>
       </ScrollView>
+
+      {/* SELECTION MODALS */}
+      <SelectionModal
+        visible={activeModal === "gender"}
+        title="Select Gender"
+        data={GENDER_OPTIONS}
+        selectedValue={formData?.gender}
+        onSelect={(val) => {
+          handleFieldChange("gender", val);
+          setActiveModal(null);
+        }}
+        onClose={() => setActiveModal(null)}
+      />
+
+      <SelectionModal
+        visible={activeModal === "bloodType"}
+        title="Select Blood Group"
+        data={BLOOD_GROUPS}
+        selectedValue={formData?.bloodType}
+        onSelect={(val) => {
+          handleFieldChange("bloodType", val);
+          setActiveModal(null);
+        }}
+        onClose={() => setActiveModal(null)}
+      />
+
+      <SelectionModal
+        visible={activeModal === "province"}
+        title="Select Province"
+        data={availableProvinces}
+        selectedValue={formData?.province}
+        onSelect={(val) => {
+          handleFieldChange("province", val);
+          handleFieldChange("district", ""); // Reset city selection when province changes
+          setActiveModal(null);
+        }}
+        onClose={() => setActiveModal(null)}
+      />
+
+      <SelectionModal
+        visible={activeModal === "city"}
+        title={`Select City (${formData?.province || ""})`}
+        data={availableCities}
+        selectedValue={formData?.district}
+        onSelect={(val) => {
+          handleFieldChange("district", val);
+          setActiveModal(null);
+        }}
+        onClose={() => setActiveModal(null)}
+      />
+
+      {/* Feedback Modal Popup */}
+      <Modal visible={feedbackModal.visible} transparent animationType="fade">
+        <View className="flex-1 bg-black/60 justify-center items-center px-6">
+          <View className="bg-white rounded-3xl p-6 w-full max-w-sm items-center shadow-2xl">
+            <View
+              className={`w-14 h-14 rounded-full items-center justify-center mb-3 ${
+                feedbackModal.type === "success"
+                  ? "bg-emerald-100"
+                  : "bg-red-100"
+              }`}
+            >
+              {feedbackModal.type === "success" ? (
+                <CheckCircle2 size={28} color="#059669" />
+              ) : (
+                <XCircle size={28} color="#dc2626" />
+              )}
+            </View>
+
+            <AppText
+              variant="black"
+              className="text-lg text-slate-900 uppercase mb-1 text-center"
+            >
+              {feedbackModal.title}
+            </AppText>
+            <AppText
+              variant="medium"
+              className="text-slate-500 text-xs text-center leading-5 mb-6"
+            >
+              {feedbackModal.message}
+            </AppText>
+
+            <TouchableOpacity
+              onPress={() =>
+                setFeedbackModal({ ...feedbackModal, visible: false })
+              }
+              className={`w-full h-12 rounded-2xl items-center justify-center ${
+                feedbackModal.type === "success"
+                  ? "bg-emerald-600"
+                  : "bg-red-600"
+              }`}
+            >
+              <AppText
+                variant="bold"
+                className="text-white text-sm uppercase tracking-wider"
+              >
+                Okay
+              </AppText>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Delete Confirmation Modal */}
+      <Modal visible={deleteModalShow} transparent animationType="fade">
+        <View className="flex-1 bg-black/60 justify-center items-center px-6">
+          <View className="bg-white rounded-3xl p-6 w-full max-w-sm items-center shadow-2xl">
+            <View className="w-14 h-14 bg-red-100 rounded-full items-center justify-center mb-3">
+              <AlertTriangle size={28} color="#dc2626" />
+            </View>
+
+            <AppText
+              variant="black"
+              className="text-lg text-slate-900 uppercase mb-1"
+            >
+              Delete Profile?
+            </AppText>
+            <AppText
+              variant="medium"
+              className="text-slate-500 text-xs text-center leading-5 mb-6"
+            >
+              Are you sure? This action will permanently remove your visibility
+              as an emergency donor.
+            </AppText>
+
+            <View className="w-full space-y-2">
+              <TouchableOpacity
+                onPress={handleDeleteProfile}
+                disabled={deleteLoading}
+                className="w-full h-12 bg-red-600 rounded-2xl items-center justify-center"
+              >
+                {deleteLoading ? (
+                  <ActivityIndicator color="white" />
+                ) : (
+                  <AppText
+                    variant="bold"
+                    className="text-white text-sm uppercase"
+                  >
+                    Yes, Delete Profile
+                  </AppText>
+                )}
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                onPress={() => setDeleteModalShow(false)}
+                className="w-full h-12 bg-slate-100 rounded-2xl items-center justify-center mt-2"
+              >
+                <AppText
+                  variant="bold"
+                  className="text-slate-700 text-sm uppercase"
+                >
+                  Cancel
+                </AppText>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
 
-const InputGroup = ({ label, value, icon, isEdit, onChange, isRed }) => (
-  <View className="mb-5">
-    <Text className="text-gray-400 text-[10px] font-black uppercase mb-2 ml-1 tracking-widest">
-      {label}
-    </Text>
-    <View
-      className={`flex-row items-center px-4 py-3 rounded-2xl border ${isEdit ? "bg-white border-red-200" : "bg-gray-50 border-transparent"}`}
+// Sub-components
+const StatCard = ({ icon, label, value, colors }) => (
+  <View className="w-[48%] mb-3">
+    <LinearGradient
+      colors={colors}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 1 }}
+      className="p-4 rounded-3xl items-center justify-center shadow-sm"
     >
-      {icon}
+      <View className="bg-white/10 p-2 rounded-xl mb-1">{icon}</View>
+      <AppText
+        variant="bold"
+        className="text-[9px] uppercase tracking-widest text-white/70 mb-0.5"
+      >
+        {label}
+      </AppText>
+      <AppText variant="black" className="text-white text-lg">
+        {value}
+      </AppText>
+    </LinearGradient>
+  </View>
+);
+
+const InputGroup = ({
+  label,
+  icon: Icon,
+  value,
+  onChangeText,
+  isEditing,
+  keyboardType = "default",
+}) => (
+  <View className="mb-3">
+    <AppText
+      variant="bold"
+      className="text-[10px] uppercase tracking-widest text-slate-400 mb-1 ml-1"
+    >
+      {label}
+    </AppText>
+    <View
+      className={`flex-row items-center px-4 h-12 rounded-2xl border ${
+        isEditing
+          ? "bg-white border-red-500"
+          : "bg-slate-50/80 border-slate-100"
+      }`}
+    >
+      <Icon size={16} color={isEditing ? "#dc2626" : "#94a3b8"} />
       <TextInput
-        className={`flex-1 ml-3 font-bold text-sm ${isRed ? "text-red-800" : "text-gray-800"}`}
-        value={value}
-        editable={isEdit}
-        onChangeText={onChange}
+        value={value ? String(value) : ""}
+        onChangeText={onChangeText}
+        editable={isEditing}
+        keyboardType={keyboardType}
+        className="flex-1 ml-3 font-semibold text-slate-800 text-sm py-0"
       />
     </View>
+  </View>
+);
+
+const SelectGroup = ({ label, icon: Icon, value, isEditing, onPress }) => (
+  <View className="mb-3">
+    <AppText
+      variant="bold"
+      className="text-[10px] uppercase tracking-widest text-slate-400 mb-1 ml-1"
+    >
+      {label}
+    </AppText>
+    <TouchableOpacity
+      activeOpacity={isEditing ? 0.7 : 1}
+      onPress={onPress}
+      className={`flex-row items-center justify-between px-4 h-12 rounded-2xl border ${
+        isEditing
+          ? "bg-white border-red-500"
+          : "bg-slate-50/80 border-slate-100"
+      }`}
+    >
+      <View className="flex-row items-center flex-1 mr-2">
+        <Icon size={16} color={isEditing ? "#dc2626" : "#94a3b8"} />
+        <AppText
+          variant="bold"
+          className="ml-3 text-slate-800 text-sm"
+          numberOfLines={1}
+        >
+          {value}
+        </AppText>
+      </View>
+      {isEditing && <ChevronDown size={16} color="#dc2626" />}
+    </TouchableOpacity>
   </View>
 );
