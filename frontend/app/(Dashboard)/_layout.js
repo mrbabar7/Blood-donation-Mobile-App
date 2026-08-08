@@ -98,19 +98,6 @@ export default function DashboardLayout() {
           }}
         />
 
-        {/* 3. History */}
-        <Tabs.Screen
-          name="history"
-          options={{
-            title: "History", // 🌟 Dynamically sent to your ScreenHeader
-            tabBarIcon: ({ color, focused }) => (
-              <View className={focused ? "bg-red-50 p-2 rounded-xl" : ""}>
-                <History color={color} size={focused ? 22 : 20} />
-              </View>
-            ),
-          }}
-        />
-
         {/* 4. Profile */}
         <Tabs.Screen
           name="profile"

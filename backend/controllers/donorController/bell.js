@@ -2,9 +2,11 @@ const { Donor, DonationRequest } = require("../../models/formModel");
 
 const bell = async (req, res) => {
   try {
-    const donor = await Donor.findOne({ userId: req.user.id });
+    const userId = req.user.id || req.user._id;
+    const donor = await Donor.findOne({ userId });
+
     if (!donor) {
-      return res.json({ isDonor: false, count: 0, hasPendingRequests: false });
+      return res.json({ isDonor: false, count: 0, isAvailable: false });
     }
 
     const requestCount = await DonationRequest.countDocuments({
@@ -13,11 +15,11 @@ const bell = async (req, res) => {
     });
 
     res.json({
+      success: true,
       isDonor: true,
       count: requestCount,
-      emailAlerts: donor.emailAlerts,
-      appNotifications: donor.appNotifications,
       isAvailable: donor.isAvailable,
+      nextAvailableDate: donor.nextAvailableDate,
     });
   } catch (err) {
     console.error("Error in Bell Controller:", err);
@@ -27,21 +29,36 @@ const bell = async (req, res) => {
 
 const updateSettings = async (req, res) => {
   try {
+    const userId = req.user.id || req.user._id;
     const { field, value } = req.body;
+
+    const allowedFields = ["isAvailable"];
+    if (!allowedFields.includes(field)) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Invalid field update" });
+    }
+
     const updatedDonor = await Donor.findOneAndUpdate(
-      { userId: req.user.id },
+      { userId },
       { [field]: value },
       { new: true },
     );
 
     if (!updatedDonor) {
-      return res.status(404).json({ message: "Donor record not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "Donor record not found" });
     }
 
-    res.json({ success: true, message: "Settings updated successfully" });
+    res.json({
+      success: true,
+      message: "Settings updated successfully",
+      donor: updatedDonor,
+    });
   } catch (err) {
     console.error("Update Settings Error:", err);
-    res.status(500).json({ error: "Server error" });
+    res.status(500).json({ success: false, error: "Server error" });
   }
 };
 

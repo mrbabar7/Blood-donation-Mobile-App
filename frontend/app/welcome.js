@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import {
   View,
   Text,
@@ -6,33 +6,32 @@ import {
   FlatList,
   Dimensions,
   Image,
+  Animated,
 } from "react-native";
 import { useRouter } from "expo-router";
 import * as SecureStore from "expo-secure-store";
 import { Ionicons } from "@expo/vector-icons";
-import { MotiView } from "moti";
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
 
-// Update image paths to match your assets directory
 const ONBOARDING_SLIDES = [
   {
     id: "1",
-    image: require("../assets/../assets/first-blood.png"), // <-- Path to your first image
+    image: require("../assets/first-blood.png"),
     title: "BE A VOLUNTARY DONOR",
     description:
       "Join our trusted network of life-savers across Pakistan. Your small contribution can provide someone a second lease on life.",
   },
   {
     id: "2",
-    image: require("../assets/blood-second.png"), // <-- Path to your second image
+    image: require("../assets/blood-second.png"),
     title: "FIND MATCHES INSTANTLY",
     description:
       "Filter real-time active donor directories instantly by province, city, and blood type during critical medical emergencies.",
   },
   {
     id: "3",
-    image: require("../assets/third-blood.png"), // <-- Path to your third image
+    image: require("../assets/third-blood.png"),
     title: "REQUEST BLOOD SECURELY",
     description:
       "Submit instant blood requests to close-proximity matches, track responses, and manage urgencies with simple localized tools.",
@@ -44,12 +43,24 @@ export default function WelcomeScreen() {
   const flatListRef = useRef(null);
   const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
 
+  // Fade-in animation replacement for MotiView
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    fadeAnim.setValue(0);
+    Animated.timing(fadeAnim, {
+      toValue: 1,
+      duration: 400,
+      useNativeDriver: true,
+    }).start();
+  }, [currentSlideIndex]);
+
   const completeOnboarding = async () => {
     try {
       await SecureStore.setItemAsync("hasSeenWelcome", "true");
-      router.replace("/(dashboard)");
     } catch (error) {
-      console.log("Could not write onboarding tokens:", error);
+      console.log("Could not write onboarding status:", error);
+    } finally {
       router.replace("/(dashboard)");
     }
   };
@@ -72,7 +83,7 @@ export default function WelcomeScreen() {
 
   return (
     <View className="flex-1 bg-red-900">
-      {/* Top Header: App Name on Left, Skip Button on Right */}
+      {/* Top Header */}
       <View className="h-20 flex-row justify-between items-center px-6 mt-10 z-10">
         <View className="flex-row items-center space-x-1.5">
           <Ionicons name="water" size={25} color="#ffffff" />
@@ -91,7 +102,7 @@ export default function WelcomeScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* FlatList Onboarding Slider */}
+      {/* Onboarding Slider */}
       <FlatList
         ref={flatListRef}
         data={ONBOARDING_SLIDES}
@@ -103,27 +114,24 @@ export default function WelcomeScreen() {
         renderItem={({ item }) => (
           <View
             style={{ width: SCREEN_WIDTH }}
-            className="items-center justify-start px-6 pt-2 pb-4 flex-1 "
+            className="items-center justify-start px-6 pt-2 pb-4 flex-1"
           >
-            {/* Image Section with Moti Animation */}
-            <MotiView
-              from={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ type: "timing", duration: 400 }}
+            {/* Image Container with Native Animation */}
+            <Animated.View
+              style={{
+                height: SCREEN_HEIGHT * 0.37,
+                opacity: fadeAnim,
+              }}
               className="w-full justify-center items-center my-10"
-              style={{ height: SCREEN_HEIGHT * 0.37 }}
             >
               <Image
                 source={item.image}
-                style={{
-                  width: "100%",
-                  height: "100%",
-                }}
+                style={{ width: "100%", height: "100%" }}
                 resizeMode="contain"
               />
-            </MotiView>
+            </Animated.View>
 
-            {/* Title & Description Content */}
+            {/* Title & Description */}
             <View className="items-center px-4 mb-2">
               <Text className="text-2xl font-black text-white text-center mb-2 tracking-wider uppercase">
                 {item.title}
@@ -138,7 +146,7 @@ export default function WelcomeScreen() {
 
       {/* Footer Controls */}
       <View className="px-8 py-8 items-center flex-1">
-        {/* Progress Indicators */}
+        {/* Progress Dots */}
         <View className="flex-row justify-center items-center mb-8">
           {ONBOARDING_SLIDES.map((_, index) => (
             <View

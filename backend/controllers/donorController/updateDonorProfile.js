@@ -17,6 +17,7 @@ exports.updateDonorProfile = async (req, res) => {
       ? new Date(donor.nextAvailableDate)
       : null;
 
+    // Prevent bypassing 90-day recovery lock
     if (nextAvailable && nextAvailable > today) {
       if (
         updatedData.isAvailable === true ||
@@ -25,7 +26,7 @@ exports.updateDonorProfile = async (req, res) => {
         return res.status(403).json({
           success: false,
           message:
-            "Action Blocked: You cannot go active during the 90-day recovery period.",
+            "Action Blocked: You cannot toggle availability during your 90-day post-donation recovery period.",
         });
       }
     }

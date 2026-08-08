@@ -1,3 +1,4 @@
+// models/userModel.js
 const mongoose = require("mongoose");
 
 const userSchema = new mongoose.Schema(
@@ -6,11 +7,17 @@ const userSchema = new mongoose.Schema(
     email: { type: String, required: true, unique: true, lowercase: true },
     password: { type: String, required: false },
     googleId: { type: String, unique: true, sparse: true },
-    profilePicture: { type: String },
+    profilePicture: { type: String, default: "" },
     otp: { type: String },
     otpExpires: { type: Date },
     isVerified: { type: Boolean, default: false },
     token: { type: String, default: null },
+    pushToken: { type: String, default: null }, // Expo Push Token for background notifications
+    isOnline: { type: Boolean, default: false }, // Syncs with Socket.io connections
+    lastSeen: { type: Date, default: Date.now },
+    pendingEmail: { type: String, default: null },
+    emailChangeOtp: { type: String, default: null },
+    emailChangeOtpExpires: { type: Date, default: null },
   },
   { timestamps: true },
 );

@@ -1,3 +1,4 @@
+// models/donorModel.js
 const mongoose = require("mongoose");
 
 const donorSchema = new mongoose.Schema(
@@ -16,6 +17,8 @@ const donorSchema = new mongoose.Schema(
     district: { type: String, required: true },
     profilePicture: { type: String, default: "" },
     isAvailable: { type: Boolean, default: true },
+    isOnline: { type: Boolean, default: false },
+    lastSeen: { type: Date, default: Date.now },
     livesSaved: { type: Number, default: 0 },
     rating: { type: Number, default: 0 },
     totalRatings: { type: Number, default: 0 },
@@ -38,16 +41,29 @@ const requestSchema = new mongoose.Schema(
       required: true,
     },
     requestedBloodType: { type: String, required: true },
+    seekerName: { type: String, required: true },
+    seekerPhone: { type: String, required: true },
+    seekerLocation: {
+      province: { type: String, required: true },
+      city: { type: String, required: true },
+      addressLine: { type: String, required: true },
+    },
     status: {
       type: String,
       enum: ["pending", "accepted", "rejected", "completed"],
       default: "pending",
     },
+    isRated: { type: Boolean, default: false }, // Tracks if seeker gave rating for this donation
+    rating: { type: Number, default: 0 }, // Rating score given for this request
+    completedAt: { type: Date, default: null },
     expireAt: { type: Date, default: null },
   },
   { timestamps: true },
 );
+
+// or keep TTL index if auto-deletion on expireAt is desired.
 requestSchema.index({ expireAt: 1 }, { expireAfterSeconds: 0 });
+
 const Donor = mongoose.model("Donor", donorSchema);
 const DonationRequest = mongoose.model("DonationRequest", requestSchema);
 

@@ -1,12 +1,33 @@
+// const ngoModel = require("../../models/ngoModel");
+
+// const getNgo = async (req, res) => {
+//   try {
+//     const banks = await ngoModel.find();
+//     res.json({ success: true, data: banks });
+//   } catch (err) {
+//     console.error("Error fetching blood banks:", err);
+//     res.status(500).json({ success: false, error: err.message });
+//   }
+// };
+
+// module.exports = { getNgo };
 const ngoModel = require("../../models/ngoModel");
 
 const getNgo = async (req, res) => {
   try {
-    const banks = await ngoModel.find();
-    res.json({ success: true, data: banks });
+    const ngos = await ngoModel.find().sort({ createdAt: -1 });
+    res.status(200).json({
+      success: true,
+      count: ngos.length,
+      data: ngos,
+    });
   } catch (err) {
-    console.error("Error fetching blood banks:", err);
-    res.status(500).json({ success: false, error: err.message });
+    console.error("Error fetching NGOs:", err);
+    res.status(500).json({
+      success: false,
+      message: "Server Error: Unable to fetch NGO directory data.",
+      error: err.message,
+    });
   }
 };
 

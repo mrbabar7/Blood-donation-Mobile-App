@@ -7,8 +7,10 @@ import { StatusBar } from "expo-status-bar";
 import { useRouter } from "expo-router";
 import AppText from "../../components/AppText";
 import SideDrawer from "./SideDrawer";
+import AddressModal from "../../components/AddressModal";
 import { useAuth } from "../../context/AuthContext";
 import { useDonor } from "../../context/DonorContext";
+import { useAddress } from "../../context/AddressContext";
 
 export default function DashboardHeader() {
   const insets = useSafeAreaInsets();
@@ -16,6 +18,8 @@ export default function DashboardHeader() {
   const [menuVisible, setMenuVisible] = useState(false);
   const { user } = useAuth() || {};
   const { isDonor: isDonorRegistered } = useDonor();
+  const { primaryAddress, openAddressModal } = useAddress();
+
   // Pulse Animation logic for Active Donor state
   const pulseAnim = useRef(new Animated.Value(1)).current;
 
@@ -90,7 +94,7 @@ export default function DashboardHeader() {
                   router.push("/(registration)/donor-registration?from=index")
                 }
                 activeOpacity={0.8}
-                className="self-start px-3 py-1 rounded-full border-2 border-white  shadow-sm"
+                className="self-start px-3 py-1 rounded-full border-2 border-white shadow-sm"
               >
                 <AppText variant="bold" className="text-xs text-white">
                   Register as Donor
@@ -116,7 +120,7 @@ export default function DashboardHeader() {
           <View className="flex-row items-center gap-2">
             {/* Help Button */}
             <TouchableOpacity
-              onPress={() => router.push("/help")}
+              onPress={() => router.push("/(manual)/help-center")}
               activeOpacity={0.7}
               className="w-10 h-10 items-center justify-center rounded-xl bg-white/10 border border-white/10"
             >
@@ -125,7 +129,7 @@ export default function DashboardHeader() {
 
             {/* Notifications Button */}
             <TouchableOpacity
-              onPress={() => router.push("/notifications")}
+              onPress={() => router.push("/(manual)/notifications")}
               activeOpacity={0.7}
               className="w-10 h-10 items-center justify-center rounded-xl bg-white/10 border border-white/10 relative"
             >
@@ -143,7 +147,47 @@ export default function DashboardHeader() {
             </TouchableOpacity>
           </View>
         </View>
+
+        {/* --- ADDRESS BAR SECTION (LOGGED IN USERS ONLY) --- */}
+        {user && (
+          <View className="mt-3 pt-3 border-t border-white/20 flex-row items-center justify-between">
+            <View className="flex-row items-center flex-1 mr-2">
+              <Ionicons name="location-sharp" size={16} color="#FECACA" />
+              <AppText
+                variant="medium"
+                className="text-xs text-white/90 ml-1.5 flex-1"
+                numberOfLines={1}
+              >
+                {primaryAddress
+                  ? `${primaryAddress.city}, ${primaryAddress.province} (${primaryAddress.addressLine})`
+                  : "No location address set"}
+              </AppText>
+            </View>
+
+            {/* Address Action Button with Transparent BG & White Border */}
+            <TouchableOpacity
+              onPress={openAddressModal}
+              activeOpacity={0.8}
+              className="px-3 py-1.5 rounded-lg bg-transparent border border-white flex-row items-center gap-1"
+            >
+              <Ionicons
+                name={primaryAddress ? "create-outline" : "add-circle-outline"}
+                size={14}
+                color="white"
+              />
+              <AppText
+                variant="bold"
+                className="text-xs text-white uppercase tracking-wider"
+              >
+                {primaryAddress ? "Change Address" : "Add Address"}
+              </AppText>
+            </TouchableOpacity>
+          </View>
+        )}
       </LinearGradient>
+
+      {/* Shared Address Management Modal */}
+      <AddressModal />
 
       {/* Side Menu Drawer */}
       <SideDrawer visible={menuVisible} onClose={() => setMenuVisible(false)} />

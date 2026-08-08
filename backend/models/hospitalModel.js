@@ -1,3 +1,63 @@
+// const mongoose = require("mongoose");
+
+// const HospitalSchema = new mongoose.Schema({
+//   formType: {
+//     type: String,
+//     default: "Hospital",
+//   },
+//   name: {
+//     type: String,
+//     required: [true, "Hospital name is required"],
+//     trim: true,
+//   },
+//   email: {
+//     type: String,
+//     required: true,
+//     lowercase: true,
+//     trim: true,
+//   },
+//   orgType: {
+//     type: String,
+//     required: true,
+//     enum: ["Private / Trust", "Government", "Semi-Government"],
+//   },
+//   timing: {
+//     type: String,
+//     required: true,
+//   },
+//   operatingDays: {
+//     type: [String],
+//     required: [true, "Operating days are required"],
+//   },
+//   phone: {
+//     type: String,
+//     required: false,
+//     default: "",
+//   },
+//   whatsapp: {
+//     type: String,
+//     required: true,
+//   },
+//   category: {
+//     type: [String],
+//     required: true,
+//   },
+//   website: {
+//     type: String,
+//     default: "",
+//   },
+//   address: {
+//     type: String,
+//     required: true,
+//   },
+//   createdAt: {
+//     type: Date,
+//     default: Date.now,
+//   },
+// });
+
+// module.exports = mongoose.model("Hospital", HospitalSchema);
+
 const mongoose = require("mongoose");
 
 const HospitalSchema = new mongoose.Schema({
@@ -19,15 +79,17 @@ const HospitalSchema = new mongoose.Schema({
   orgType: {
     type: String,
     required: true,
-    enum: ["Private / Trust", "Government", "Semi-Government"],
+    enum: ["Private", "Government", "Semi-Government", "Trust / NGO"],
   },
   timing: {
     type: String,
-    required: true,
+    required: [true, "Operating hours / timing are required"],
+    default: "24/7 Service Available",
   },
   operatingDays: {
     type: [String],
     required: [true, "Operating days are required"],
+    default: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
   },
   phone: {
     type: String,
@@ -36,19 +98,22 @@ const HospitalSchema = new mongoose.Schema({
   },
   whatsapp: {
     type: String,
-    required: true,
+    required: [true, "WhatsApp number is required"],
+    trim: true,
   },
   category: {
     type: [String],
-    required: true,
+    required: [true, "At least one category or specialty is required"],
   },
   website: {
     type: String,
     default: "",
+    trim: true,
   },
   address: {
     type: String,
-    required: true,
+    required: [true, "Address is required"],
+    trim: true,
   },
   createdAt: {
     type: Date,

@@ -4,9 +4,8 @@ const { sendingEmail } = require("../../email-sender/emailService");
 const {
   seekerUpdateTemplate,
 } = require("../../email-sender/seekerResponceEmailTemplate");
-const {
-  createNotification,
-} = require("../donor&seekerController/Notification");
+const { createNotification } = require("../notificationController");
+
 exports.acceptRequest = async (req, res) => {
   try {
     const { requestId } = req.params;
@@ -17,34 +16,38 @@ exports.acceptRequest = async (req, res) => {
       { new: true },
     );
 
-    if (!request)
+    if (!request) {
       return res
         .status(404)
         .json({ success: false, message: "Request not found" });
+    }
 
     const donor = await Donor.findById(request.donorId).populate("userId");
     const seeker = await userModel.findById(request.seekerId);
 
-    await userModel.findByIdAndUpdate(request.seekerId, {
-      hasPendingRating: true,
-      pendingDonorId: donor._id,
-      pendingDonorName: donor.fullName,
-    });
-    const io = req.app.get("socketio");
+    if (!seeker || !donor) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Seeker or Donor record not found" });
+    }
 
-    await createNotification(
-      request.seekerId,
-      `Good news! Donor ${donor.fullName} has accepted your blood request.Please contact the donor.`,
-      "/dashboard/my-requests",
-      io,
-    );
+    // Push notification + database entry + socket event
+    await createNotification({
+      userId: request.seekerId,
+      message: `Good news! Donor ${donor.fullName} has accepted your blood request. Please contact the donor.`,
+      link: "/dashboard/my-requests",
+      data: {
+        screen: "MyRequests",
+        requestId: request._id.toString(),
+      },
+    });
 
     const donorDetailsHtml = `
       <div style="background:#f1f5f9; border-radius:16px; padding:20px; text-align:left; margin-top:20px; border-left: 5px solid #059669;">
         <div style="font-weight:bold; margin-bottom:12px; color:#1e293b; font-size:16px;">DONOR CONTACT DETAILS:</div>
         <div style="margin-bottom:8px; font-size:14px;"><b>👤 Name:</b> ${donor.fullName}</div>
         <div style="margin-bottom:8px; font-size:14px;"><b>📞 Phone:</b> ${donor.mobileNumber}</div>
-        <div style="margin-bottom:8px; font-size:14px;"><b>📧 Email:</b> ${donor.userId.email}</div>
+        <div style="margin-bottom:8px; font-size:14px;"><b>📧 Email:</b> ${donor.userId ? donor.userId.email : "N/A"}</div>
         <div style="margin-bottom:8px; font-size:14px;"><b>📍 Location:</b> ${donor.district}, ${donor.province}</div>
       </div>
     `;
@@ -65,13 +68,17 @@ exports.acceptRequest = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      message: "Request accepted and seeker notified via Dashboard & Email.",
+      message: "Request accepted and seeker notified via Push & Email.",
       request,
     });
   } catch (error) {
     console.error("Accept Request Error:", error);
     res
       .status(500)
-      .json({ success: false, message: "Server error during acceptance" });
+      .json({
+        success: false,
+        message: "Server error during acceptance",
+        error: error.message,
+      });
   }
 };

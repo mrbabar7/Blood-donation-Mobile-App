@@ -6,6 +6,7 @@ exports.getMyRequests = async (req, res) => {
     const oneWeekAgo = new Date();
     oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
 
+    // Auto-reject stale requests older than 7 days
     await DonationRequest.updateMany(
       {
         seekerId,
@@ -16,16 +17,26 @@ exports.getMyRequests = async (req, res) => {
     );
 
     const requests = await DonationRequest.find({ seekerId })
-      .populate(
-        "donorId",
-        "fullName bloodType district province mobileNumber profilePicture",
-      )
+      .populate({
+        path: "donorId",
+        select:
+          "fullName bloodType district province mobileNumber profilePicture rating totalRatings livesSaved",
+        populate: {
+          path: "userId",
+          select: "isOnline lastSeen",
+        },
+      })
       .sort({ createdAt: -1 });
 
-    res.status(200).json(requests);
+    res.status(200).json({ success: true, count: requests.length, requests });
   } catch (error) {
+    console.error("Get My Requests Error:", error);
     res
       .status(500)
-      .json({ message: "Failed to fetch requests", error: error.message });
+      .json({
+        success: false,
+        message: "Failed to fetch requests",
+        error: error.message,
+      });
   }
 };

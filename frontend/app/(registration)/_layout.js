@@ -18,6 +18,19 @@ export default function RegistrationLayout() {
           name="donor-registration"
           options={{ title: "Donor Registration" }}
         />
+        <Stack.Screen
+          name="ambulances"
+          options={{ title: "Ambulance Directory" }}
+        />
+        <Stack.Screen
+          name="hospitals"
+          options={{ title: "Hospital Directory" }}
+        />
+        <Stack.Screen
+          name="blood-banks"
+          options={{ title: "Blood Bank Directory" }}
+        />
+        <Stack.Screen name="ngos" options={{ title: "NGO Directory" }} />
       </Stack>
     </SafeAreaView>
   );

@@ -3,6 +3,7 @@ const jwt = require("jsonwebtoken");
 const userModel = require("../models/userMode");
 const login = require("../controllers/authController/logIn");
 const signUp = require("../controllers/authController/signUp");
+const savePushToken = require("../controllers/authController/savePushToken");
 const {
   verifyOTP,
   resendOTP,
@@ -80,6 +81,7 @@ router.post("/verify-otp", verifyOTP);
 router.post("/resend-otp", resendOTP);
 router.post("/login", validateLogin, login);
 router.post("/forgot-password", forgotPassword);
+router.post("/save-push-token", savePushToken);
 router.post("/reset-password", resetPassword);
 router.post("/contact", handleContactInquiry);
 

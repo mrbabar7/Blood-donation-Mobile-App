@@ -1,9 +1,7 @@
 const cron = require("node-cron");
 const { DonationRequest } = require("../models/formModel");
 const userModel = require("../models/userMode");
-const {
-  createNotification,
-} = require("../controllers/donor&seekerController/Notification");
+const { createNotification } = require("../controllers/notificationController");
 
 const initAutoRejectCron = () => {
   cron.schedule("0 0 * * *", async () => {

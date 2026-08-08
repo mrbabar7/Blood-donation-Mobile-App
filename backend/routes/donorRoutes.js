@@ -30,7 +30,7 @@ const changePassword = require("../controllers/donorController/changePassword");
 const {
   getNotifications,
   markAsRead,
-} = require("../controllers/donor&seekerController/Notification");
+} = require("../controllers/notificationController");
 const {
   deleteAccount,
 } = require("../controllers/donor&seekerController/deleteAccount");

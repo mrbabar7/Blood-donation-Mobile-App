@@ -26,7 +26,7 @@ const apiUrl = process.env.EXPO_PUBLIC_API_URL;
 
 export default function LogIn() {
   const router = useRouter();
-  const { setUser } = useAuth() || {};
+  const { setUser, setSharedToken } = useAuth() || {};
 
   const [formData, setFormData] = useState({
     email: "",
@@ -84,13 +84,12 @@ export default function LogIn() {
       });
 
       const data = await res.json();
-
       if (res.ok && data.success) {
         await SecureStore.setItemAsync("userToken", data.token);
         await SecureStore.setItemAsync("user", JSON.stringify(data.user));
 
         if (setUser) setUser(data.user);
-
+        if (setSharedToken) setSharedToken(data.token);
         router.replace("/(dashboard)");
       } else {
         if (data.notVerified) {

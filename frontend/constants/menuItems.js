@@ -1,18 +1,23 @@
 // constants/menuItems.js
 export const MENU_ITEMS = [
   {
-    title: "Emergency",
-    icon: "alert-circle-outline",
-    path: "/(landing-Page)/emergency",
-  },
-  {
     title: "About Us",
     icon: "help-circle-outline",
-    path: "/(landing-Page)/about",
+    path: "/(manual)/about",
   },
   {
     title: "Contact Us",
     icon: "call-outline",
-    path: "/(landing-Page)/contact",
+    path: "/(manual)/contact",
+  },
+  {
+    title: "Privacy Policy",
+    icon: "alert-circle-outline",
+    path: "/(manual)/privacy",
+  },
+  {
+    title: "Terms & Services",
+    icon: "alert-circle-outline",
+    path: "/(manual)/terms",
   },
 ];

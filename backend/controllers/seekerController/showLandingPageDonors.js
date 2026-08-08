@@ -4,6 +4,7 @@ exports.showLandingPageDonors = async (req, res) => {
   try {
     const currentUserId = req.user ? req.user.id || req.user._id : null;
     const { bloodType, district, province } = req.query;
+
     const today = new Date();
 
     let query = {

@@ -5,111 +5,100 @@ import {
   TouchableOpacity,
   ScrollView,
   Switch,
-  Platform,
-  Alert,
-  Image,
+  StyleSheet,
 } from "react-native";
 import {
   User,
-  Lock,
   Bell,
   Shield,
   CircleHelp,
-  LogOut,
   ChevronRight,
-  Trash2,
-  Moon,
   Globe,
   BellOff,
+  MapPin,
 } from "lucide-react-native";
 import { useRouter } from "expo-router";
 
+// Context & Component Imports
+import { useAddress } from "../../context/AddressContext";
+import AddressModal from "../../components/AddressModal";
+
 export default function SettingsScreen() {
   const router = useRouter();
-
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
-  const [darkMode, setDarkMode] = useState(false);
 
-  const handleLogout = () => {
-    Alert.alert("Logout", "Are you sure?", [
-      { text: "Cancel", style: "cancel" },
-      {
-        text: "Logout",
-        style: "destructive",
-        onPress: () => router.replace("/login"),
-      },
-    ]);
-  };
+  // Address Hook
+  const { primaryAddress, openAddressModal } = useAddress();
+
+  const formattedAddress = primaryAddress
+    ? `${primaryAddress.city}, ${primaryAddress.province} (${primaryAddress.addressLine})`
+    : "No location address set";
 
   return (
-    <View className="flex-1 bg-gray-50">
-      <ScrollView className="flex-1 px-5" showsVerticalScrollIndicator={false}>
+    <View style={styles.container}>
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
         {/* --- ACCOUNT SECTION --- */}
-        <Text className="text-gray-400 text-[10px] font-black uppercase mt-8 mb-2 ml-2 tracking-widest">
-          Account Settings
-        </Text>
-        <View className="bg-white rounded-[25px] px-4 shadow-sm border border-gray-100">
+        <Text style={styles.sectionHeader}>Account Settings</Text>
+        <View style={styles.card}>
           {/* Personal Info */}
-          <TouchableOpacity className="flex-row items-center justify-between py-4 border-b border-gray-50">
-            <View className="flex-row items-center">
-              <View className="bg-gray-100 p-2 rounded-xl">
+          <TouchableOpacity
+            onPress={() => router.push("/(manual)/account-settings")}
+            style={[styles.row, styles.borderBottom]}
+            activeOpacity={0.7}
+          >
+            <View style={styles.rowLeft}>
+              <View style={styles.iconContainer}>
                 <User size={18} color="#991b1b" />
               </View>
-              <Text className="ml-4 text-gray-700 font-semibold text-[15px]">
-                Personal Information
-              </Text>
+              <Text style={styles.rowLabel}>Personal Information</Text>
             </View>
             <ChevronRight size={18} color="#d1d5db" />
           </TouchableOpacity>
 
-          {/* Password */}
-          <TouchableOpacity className="flex-row items-center justify-between py-4 border-b border-gray-50">
-            <View className="flex-row items-center">
-              <View className="bg-gray-100 p-2 rounded-xl">
-                <Lock size={18} color="#991b1b" />
+          {/* Address Section */}
+          <View style={styles.row}>
+            <View style={styles.addressLeft}>
+              <View style={styles.iconContainer}>
+                <MapPin size={18} color="#991b1b" />
               </View>
-              <Text className="ml-4 text-gray-700 font-semibold text-[15px]">
-                Update Password
-              </Text>
+              <View style={styles.addressTextWrapper}>
+                <Text style={styles.rowLabel}>Saved Address</Text>
+                <Text style={styles.addressSubtext} numberOfLines={1}>
+                  {formattedAddress}
+                </Text>
+              </View>
             </View>
-            <ChevronRight size={18} color="#d1d5db" />
-          </TouchableOpacity>
 
-          {/* Language */}
-          <TouchableOpacity className="flex-row items-center justify-between py-4">
-            <View className="flex-row items-center">
-              <View className="bg-gray-100 p-2 rounded-xl">
-                <Globe size={18} color="#991b1b" />
-              </View>
-              <Text className="ml-4 text-gray-700 font-semibold text-[15px]">
-                Language
+            <TouchableOpacity
+              onPress={openAddressModal}
+              activeOpacity={0.8}
+              style={styles.addressButton}
+            >
+              <Text style={styles.addressButtonText}>
+                {primaryAddress ? "Change" : "Add"}
               </Text>
-            </View>
-            <View className="flex-row items-center">
-              <Text className="mr-2 text-gray-400 text-xs">English</Text>
-              <ChevronRight size={18} color="#d1d5db" />
-            </View>
-          </TouchableOpacity>
+            </TouchableOpacity>
+          </View>
         </View>
 
         {/* --- PREFERENCES --- */}
-        <Text className="text-gray-400 text-[10px] font-black uppercase mt-6 mb-2 ml-2 tracking-widest">
-          Preferences
-        </Text>
-        <View className="bg-white rounded-[25px] px-4 shadow-sm border border-gray-100">
+        <Text style={styles.sectionHeader}>Preferences</Text>
+        <View style={styles.card}>
           {/* Notifications */}
-          <View className="flex-row items-center justify-between py-4 border-b border-gray-50">
-            <View className="flex-row items-center">
-              <View className="bg-gray-100 p-2 rounded-xl">
+          <View style={[styles.row, styles.borderBottom]}>
+            <View style={styles.rowLeft}>
+              <View style={styles.iconContainer}>
                 {notificationsEnabled ? (
                   <Bell size={18} color="#991b1b" />
                 ) : (
                   <BellOff size={18} color="#9ca3af" />
                 )}
               </View>
-              <Text className="ml-4 text-gray-700 font-semibold text-[15px]">
-                Push Notifications
-              </Text>
+              <Text style={styles.rowLabel}>Push Notifications</Text>
             </View>
             <Switch
               value={notificationsEnabled}
@@ -118,78 +107,168 @@ export default function SettingsScreen() {
             />
           </View>
 
-          {/* Dark Mode */}
-          <View className="flex-row items-center justify-between py-4">
-            <View className="flex-row items-center">
-              <View className="bg-gray-100 p-2 rounded-xl">
-                <Moon size={18} color="#991b1b" />
+          {/* Language */}
+          <TouchableOpacity style={styles.row} activeOpacity={0.7}>
+            <View style={styles.rowLeft}>
+              <View style={styles.iconContainer}>
+                <Globe size={18} color="#991b1b" />
               </View>
-              <Text className="ml-4 text-gray-700 font-semibold text-[15px]">
-                Dark Mode
-              </Text>
+              <Text style={styles.rowLabel}>Language</Text>
             </View>
-            <Switch
-              value={darkMode}
-              onValueChange={setDarkMode}
-              trackColor={{ false: "#d1d5db", true: "#991b1b" }}
-            />
-          </View>
+            <View style={styles.rowRightValue}>
+              <Text style={styles.valueText}>English</Text>
+              <ChevronRight size={18} color="#d1d5db" />
+            </View>
+          </TouchableOpacity>
         </View>
 
         {/* --- SUPPORT --- */}
-        <Text className="text-gray-400 text-[10px] font-black uppercase mt-6 mb-2 ml-2 tracking-widest">
-          Support
-        </Text>
-        <View className="bg-white rounded-[25px] px-4 shadow-sm border border-gray-100">
-          <TouchableOpacity className="flex-row items-center justify-between py-4 border-b border-gray-50">
-            <View className="flex-row items-center">
-              <View className="bg-gray-100 p-2 rounded-xl">
+        <Text style={styles.sectionHeader}>Support</Text>
+        <View style={styles.card}>
+          <TouchableOpacity
+            onPress={() => router.push("/(manual)/help-center")}
+            style={[styles.row, styles.borderBottom]}
+            activeOpacity={0.7}
+          >
+            <View style={styles.rowLeft}>
+              <View style={styles.iconContainer}>
                 <CircleHelp size={18} color="#991b1b" />
               </View>
-              <Text className="ml-4 text-gray-700 font-semibold text-[15px]">
-                Help Center
-              </Text>
+              <Text style={styles.rowLabel}>Help Center</Text>
             </View>
             <ChevronRight size={18} color="#d1d5db" />
           </TouchableOpacity>
-          <TouchableOpacity className="flex-row items-center justify-between py-4">
-            <View className="flex-row items-center">
-              <View className="bg-gray-100 p-2 rounded-xl">
+
+          <TouchableOpacity
+            onPress={() => router.push("/(manual)/terms")}
+            style={[styles.row, styles.borderBottom]}
+            activeOpacity={0.7}
+          >
+            <View style={styles.rowLeft}>
+              <View style={styles.iconContainer}>
                 <Shield size={18} color="#991b1b" />
               </View>
-              <Text className="ml-4 text-gray-700 font-semibold text-[15px]">
-                Privacy Policy
-              </Text>
+              <Text style={styles.rowLabel}>Terms & Conditions</Text>
+            </View>
+            <ChevronRight size={18} color="#d1d5db" />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            onPress={() => router.push("/(manual)/privacy")}
+            style={styles.row}
+            activeOpacity={0.7}
+          >
+            <View style={styles.rowLeft}>
+              <View style={styles.iconContainer}>
+                <Shield size={18} color="#991b1b" />
+              </View>
+              <Text style={styles.rowLabel}>Privacy Policy</Text>
             </View>
             <ChevronRight size={18} color="#d1d5db" />
           </TouchableOpacity>
         </View>
-
-        {/* --- DANGER ZONE --- */}
-        <TouchableOpacity
-          onPress={() => Alert.alert("Delete", "Are you sure?")}
-          className="bg-red-50 flex-row items-center justify-between p-4 rounded-[25px] border border-red-100 mt-8 mb-10"
-        >
-          <View className="flex-row items-center">
-            <View className="bg-red-100 p-2 rounded-xl">
-              <Trash2 size={18} color="#dc2626" />
-            </View>
-            <View className="ml-4">
-              <Text className="text-red-800 font-bold text-[14px]">
-                Delete Account
-              </Text>
-              <Text className="text-red-400 text-[10px]">Permanent Action</Text>
-            </View>
-          </View>
-          <ChevronRight size={18} color="#fca5a5" />
-        </TouchableOpacity>
-
-        <View className="items-center mb-10">
-          <Text className="text-gray-300 text-[10px] font-bold uppercase">
-            PakBlood v1.0.4
-          </Text>
-        </View>
       </ScrollView>
+
+      {/* Global Address Management Modal */}
+      <AddressModal />
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: "#f9fafb",
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingHorizontal: 20,
+    paddingBottom: 30,
+  },
+  sectionHeader: {
+    color: "#9ca3af",
+    fontSize: 10,
+    fontWeight: "900",
+    textTransform: "uppercase",
+    marginTop: 24,
+    marginBottom: 8,
+    marginLeft: 8,
+    letterSpacing: 1.5,
+  },
+  card: {
+    backgroundColor: "#ffffff",
+    borderRadius: 25,
+    paddingHorizontal: 16,
+    borderWidth: 1,
+    borderColor: "#f3f4f6",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  row: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingVertical: 16,
+  },
+  borderBottom: {
+    borderBottomWidth: 1,
+    borderBottomColor: "#f9fafb",
+  },
+  rowLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    flex: 1,
+  },
+  iconContainer: {
+    backgroundColor: "#f3f4f6",
+    padding: 8,
+    borderRadius: 12,
+  },
+  rowLabel: {
+    marginLeft: 16,
+    color: "#374151",
+    fontWeight: "600",
+    fontSize: 15,
+  },
+  addressLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    flex: 1,
+    marginRight: 8,
+  },
+  addressTextWrapper: {
+    flex: 1,
+  },
+  addressSubtext: {
+    marginLeft: 16,
+    color: "#6b7280",
+    fontSize: 12,
+    marginTop: 2,
+  },
+  addressButton: {
+    backgroundColor: "#991b1b",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 10,
+  },
+  addressButtonText: {
+    color: "#ffffff",
+    fontWeight: "700",
+    fontSize: 12,
+    textTransform: "uppercase",
+  },
+  rowRightValue: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  valueText: {
+    marginRight: 8,
+    color: "#9ca3af",
+    fontSize: 12,
+  },
+});
